@@ -1,5 +1,4 @@
 import { FadeIn } from "@/components/motion";
-import { LogoutButton } from "@/components/auth/logout-button";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 // Заготовка внутреннего дашборда
@@ -66,7 +65,7 @@ export function DashboardPage() {
       </FadeIn>
 
       <FadeIn delay={0.15} direction="up" distance={16}>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,_2fr)_minmax(0,_1.2fr)]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)]">
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-medium text-foreground">

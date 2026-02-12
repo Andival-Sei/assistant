@@ -31,16 +31,16 @@
 
 ## Типы коммитов
 
-| Тип | Описание | Пример |
-|-----|----------|--------|
-| `feat` | Новая функциональность | `feat: add transaction form` |
-| `fix` | Исправление бага | `fix: correct balance calculation` |
-| `docs` | Документация | `docs: update README` |
-| `style` | Форматирование (не влияет на код) | `style: format with prettier` |
-| `refactor` | Рефакторинг (не feat, не fix) | `refactor: extract hooks` |
-| `test` | Тесты | `test: add unit tests for hooks` |
-| `chore` | Прочее (сборка, зависимости) | `chore: update dependencies` |
-| `perf` | Улучшение производительности | `perf: memoize expensive computation` |
+| Тип        | Описание                          | Пример                                |
+| ---------- | --------------------------------- | ------------------------------------- |
+| `feat`     | Новая функциональность            | `feat: add transaction form`          |
+| `fix`      | Исправление бага                  | `fix: correct balance calculation`    |
+| `docs`     | Документация                      | `docs: update README`                 |
+| `style`    | Форматирование (не влияет на код) | `style: format with prettier`         |
+| `refactor` | Рефакторинг (не feat, не fix)     | `refactor: extract hooks`             |
+| `test`     | Тесты                             | `test: add unit tests for hooks`      |
+| `chore`    | Прочее (сборка, зависимости)      | `chore: update dependencies`          |
+| `perf`     | Улучшение производительности      | `perf: memoize expensive computation` |
 
 ## Примеры
 
@@ -134,10 +134,10 @@ Conventional Commits позволяют использовать [semantic-relea
 
 ### Версионирование
 
-| Тип коммита | Версия |
-|-------------|--------|
-| `fix` | Patch (0.0.X) |
-| `feat` | Minor (0.X.0) |
+| Тип коммита       | Версия        |
+| ----------------- | ------------- |
+| `fix`             | Patch (0.0.X) |
+| `feat`            | Minor (0.X.0) |
 | `BREAKING CHANGE` | Major (X.0.0) |
 
 ## Инструменты

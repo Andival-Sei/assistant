@@ -7,7 +7,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  LogOut,
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

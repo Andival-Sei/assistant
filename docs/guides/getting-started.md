@@ -57,14 +57,14 @@ assistant/
 
 ## Основные команды
 
-| Команда | Описание |
-|---------|----------|
-| `pnpm dev` | Запуск dev-сервера |
-| `pnpm build` | Production сборка |
-| `pnpm preview` | Превью сборки |
-| `pnpm lint` | Проверка ESLint |
-| `pnpm format` | Форматирование Prettier |
-| `pnpm typecheck` | Проверка типов |
+| Команда          | Описание                |
+| ---------------- | ----------------------- |
+| `pnpm dev`       | Запуск dev-сервера      |
+| `pnpm build`     | Production сборка       |
+| `pnpm preview`   | Превью сборки           |
+| `pnpm lint`      | Проверка ESLint         |
+| `pnpm format`    | Форматирование Prettier |
+| `pnpm typecheck` | Проверка типов          |
 
 ## Следующие шаги
 

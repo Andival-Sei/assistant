@@ -37,29 +37,29 @@
 
 ### Установлено
 
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| Vite | 6.x | Сборщик и dev-сервер |
-| React | 19.x | UI библиотека |
-| TypeScript | 5.7.x | Типизация |
-| React Router | 7.x | Клиентская маршрутизация |
-| Tailwind CSS | 4.x | CSS фреймворк |
-| Framer Motion | 12.x | Анимации |
-| Lucide React | 0.562.x | Иконки |
-| class-variance-authority | 0.7.x | Варианты компонентов |
-| clsx + tailwind-merge | latest | Утилиты для классов |
-| ESLint | 9.x | Линтинг |
-| Prettier | 3.x | Форматирование |
+| Технология               | Версия  | Назначение               |
+| ------------------------ | ------- | ------------------------ |
+| Vite                     | 6.x     | Сборщик и dev-сервер     |
+| React                    | 19.x    | UI библиотека            |
+| TypeScript               | 5.7.x   | Типизация                |
+| React Router             | 7.x     | Клиентская маршрутизация |
+| Tailwind CSS             | 4.x     | CSS фреймворк            |
+| Framer Motion            | 12.x    | Анимации                 |
+| Lucide React             | 0.562.x | Иконки                   |
+| class-variance-authority | 0.7.x   | Варианты компонентов     |
+| clsx + tailwind-merge    | latest  | Утилиты для классов      |
+| ESLint                   | 9.x     | Линтинг                  |
+| Prettier                 | 3.x     | Форматирование           |
 
 ### Планируется
 
-| Технология | Назначение |
-|------------|------------|
-| Supabase | БД, Auth, Realtime |
-| TanStack Query | Серверное состояние, кеширование |
-| Zustand | Клиентское состояние |
-| Zod | Валидация схем |
-| React Hook Form | Работа с формами |
+| Технология      | Назначение                       |
+| --------------- | -------------------------------- |
+| Supabase        | БД, Auth, Realtime               |
+| TanStack Query  | Серверное состояние, кеширование |
+| Zustand         | Клиентское состояние             |
+| Zod             | Валидация схем                   |
+| React Hook Form | Работа с формами                 |
 
 ## Пакетный менеджер
 
@@ -99,12 +99,12 @@ assistant/
 
 ## Модули приложения
 
-| Модуль | Статус | Описание |
-|--------|--------|----------|
-| **Finance** | Spec Ready | Спецификация в [docs/specs/finance/](../specs/finance/) |
-| **Health** | Spec Only | Только README |
-| **Assistant** | Spec Only | Только README |
-| **Family** | Spec Only | Только README |
+| Модуль        | Статус     | Описание                                                |
+| ------------- | ---------- | ------------------------------------------------------- |
+| **Finance**   | Spec Ready | Спецификация в [docs/specs/finance/](../specs/finance/) |
+| **Health**    | Spec Only  | Только README                                           |
+| **Assistant** | Spec Only  | Только README                                           |
+| **Family**    | Spec Only  | Только README                                           |
 
 > Код модулей ещё не реализован. См. [roadmap](./roadmap.md).
 
@@ -154,12 +154,12 @@ assistant/
 
 ### staleTime по типам данных
 
-| Данные | staleTime | Причина |
-|--------|-----------|---------|
-| Транзакции | 2 мин | Часто меняются |
-| Счета | 10 мин | Редко меняются |
-| Категории | 10 мин | Редко меняются |
-| Курсы валют | 1 час | Обновляются раз в час |
+| Данные      | staleTime | Причина               |
+| ----------- | --------- | --------------------- |
+| Транзакции  | 2 мин     | Часто меняются        |
+| Счета       | 10 мин    | Редко меняются        |
+| Категории   | 10 мин    | Редко меняются        |
+| Курсы валют | 1 час     | Обновляются раз в час |
 
 ### Query Keys
 
@@ -199,14 +199,14 @@ const queryKeys = {
 
 ### Что переиспользовать
 
-| Что | Путь |
-|-----|------|
-| Типы данных | `reference/pennora/lib/types/` |
-| Валидации | `reference/pennora/lib/validations/` |
-| Query/Mutations | `reference/pennora/lib/query/` |
-| UI компоненты | `reference/pennora/components/ui/`, `reference/pennora/components/features/` |
-| Схема БД | `reference/pennora/supabase/migrations/` |
-| Стили/темы | `reference/pennora/app/globals.css` |
+| Что             | Путь                                                                         |
+| --------------- | ---------------------------------------------------------------------------- |
+| Типы данных     | `reference/pennora/lib/types/`                                               |
+| Валидации       | `reference/pennora/lib/validations/`                                         |
+| Query/Mutations | `reference/pennora/lib/query/`                                               |
+| UI компоненты   | `reference/pennora/components/ui/`, `reference/pennora/components/features/` |
+| Схема БД        | `reference/pennora/supabase/migrations/`                                     |
+| Стили/темы      | `reference/pennora/app/globals.css`                                          |
 
 ### Что НЕ переиспользовать
 
@@ -230,10 +230,10 @@ pnpm typecheck    # Проверка типов
 
 ## Документация
 
-| Документ | Описание |
-|----------|----------|
-| [CLAUDE.md](../../CLAUDE.md) | Краткий контекст для AI |
-| [Target Architecture](../concepts/target-architecture.md) | Целевая архитектура |
-| [Specs](../specs/) | Спецификации модулей |
-| [Roadmap](./roadmap.md) | План развития |
-| [ADR](./adr/) | Архитектурные решения |
+| Документ                                                  | Описание                |
+| --------------------------------------------------------- | ----------------------- |
+| [CLAUDE.md](../../CLAUDE.md)                              | Краткий контекст для AI |
+| [Target Architecture](../concepts/target-architecture.md) | Целевая архитектура     |
+| [Specs](../specs/)                                        | Спецификации модулей    |
+| [Roadmap](./roadmap.md)                                   | План развития           |
+| [ADR](./adr/)                                             | Архитектурные решения   |

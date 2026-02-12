@@ -17,19 +17,19 @@
 
 ### Обязательные
 
-| Расширение | ID | Назначение |
-|------------|---|------------|
-| ESLint | `dbaeumer.vscode-eslint` | Линтинг |
-| Prettier | `esbenp.prettier-vscode` | Форматирование |
+| Расширение                | ID                          | Назначение              |
+| ------------------------- | --------------------------- | ----------------------- |
+| ESLint                    | `dbaeumer.vscode-eslint`    | Линтинг                 |
+| Prettier                  | `esbenp.prettier-vscode`    | Форматирование          |
 | Tailwind CSS IntelliSense | `bradlc.vscode-tailwindcss` | Автодополнение Tailwind |
 
 ### Рекомендуемые
 
-| Расширение | ID | Назначение |
-|------------|---|------------|
-| TypeScript Importer | `pmneo.tsimporter` | Автоимпорт |
-| Error Lens | `usernamehw.errorlens` | Ошибки inline |
-| GitLens | `eamodio.gitlens` | Git информация |
+| Расширение               | ID                         | Назначение         |
+| ------------------------ | -------------------------- | ------------------ |
+| TypeScript Importer      | `pmneo.tsimporter`         | Автоимпорт         |
+| Error Lens               | `usernamehw.errorlens`     | Ошибки inline      |
+| GitLens                  | `eamodio.gitlens`          | Git информация     |
 | Pretty TypeScript Errors | `yoavbls.pretty-ts-errors` | Читаемые ошибки TS |
 
 ### Установка всех расширений

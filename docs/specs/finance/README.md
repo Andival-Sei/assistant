@@ -36,13 +36,13 @@
 
 ## Ключевые экраны
 
-| Экран | Описание |
-|-------|----------|
-| Dashboard | Баланс, статистика за месяц, последние транзакции |
-| Transactions | Список всех транзакций с фильтрами |
-| Accounts | Список счетов с балансами |
-| Categories | Управление категориями |
-| Statistics | Графики и диаграммы |
+| Экран        | Описание                                          |
+| ------------ | ------------------------------------------------- |
+| Dashboard    | Баланс, статистика за месяц, последние транзакции |
+| Transactions | Список всех транзакций с фильтрами                |
+| Accounts     | Список счетов с балансами                         |
+| Categories   | Управление категориями                            |
+| Statistics   | Графики и диаграммы                               |
 
 ## User Stories
 
@@ -80,24 +80,24 @@ erDiagram
 
 ### Основные hooks
 
-| Hook | Описание |
-|------|----------|
-| `useAccounts` | CRUD для счетов |
+| Hook              | Описание                          |
+| ----------------- | --------------------------------- |
+| `useAccounts`     | CRUD для счетов                   |
 | `useTransactions` | CRUD для транзакций с фильтрацией |
-| `useCategories` | CRUD для категорий |
-| `useStatistics` | Агрегированная статистика |
+| `useCategories`   | CRUD для категорий                |
+| `useStatistics`   | Агрегированная статистика         |
 
 ## Референс из Pennora
 
 Модуль основан на реализации из Pennora:
 
-| Что | Путь в Pennora |
-|-----|----------------|
-| Типы | `reference/pennora/lib/types/transaction.ts`, `reference/pennora/lib/types/category.ts` |
-| Валидации | `reference/pennora/lib/validations/transactions.ts`, `reference/pennora/lib/validations/categories.ts` |
-| Query | `reference/pennora/lib/query/queries/transactions.ts`, `reference/pennora/lib/query/queries/categories.ts` |
-| Компоненты | `reference/pennora/components/features/transactions/`, `reference/pennora/components/features/categories/` |
-| Миграции БД | `reference/pennora/supabase/migrations/` |
+| Что         | Путь в Pennora                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| Типы        | `reference/pennora/lib/types/transaction.ts`, `reference/pennora/lib/types/category.ts`                    |
+| Валидации   | `reference/pennora/lib/validations/transactions.ts`, `reference/pennora/lib/validations/categories.ts`     |
+| Query       | `reference/pennora/lib/query/queries/transactions.ts`, `reference/pennora/lib/query/queries/categories.ts` |
+| Компоненты  | `reference/pennora/components/features/transactions/`, `reference/pennora/components/features/categories/` |
+| Миграции БД | `reference/pennora/supabase/migrations/`                                                                   |
 
 ## Интеграция с другими модулями
 

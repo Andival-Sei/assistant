@@ -36,5 +36,32 @@ export interface Transaction {
   date: string;
   receipt_url?: string;
   created_at: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+/** Позиция split-транзакции (из БД) */
+export interface TransactionItem {
+  id: string;
+  transaction_id: string;
+  category_id: string | null;
+  amount: number;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  category?: Category | null;
+}
+
+/** Данные позиции для формы создания (без transaction_id) */
+export interface TransactionItemFormData {
+  category_id: string | null;
+  amount: number;
+  description?: string | null;
+  sort_order?: number;
+}
+
+/** Транзакция с позициями (split transaction) */
+export interface TransactionWithItems extends Transaction {
+  items?: TransactionItem[];
+  wallets?: { name: string };
 }

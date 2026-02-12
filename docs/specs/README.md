@@ -4,22 +4,22 @@
 
 ## Модули
 
-| Модуль | Статус | Приоритет | Описание |
-|--------|--------|-----------|----------|
-| **[Auth](./auth/README.md)** | In Progress | High | Аутентификация и авторизация (Supabase Auth) |
-| **[Finance](./finance/README.md)** | Planning | High | Учёт доходов/расходов, статистика, подсказки |
-| **[Health](./health/README.md)** | Stub | Medium | Показатели здоровья, рекомендации AI |
-| **[Assistant](./assistant/README.md)** | Stub | Medium | Списки покупок, напоминания, уведомления |
-| **[Family](./family/README.md)** | Stub | Low | Семейный режим, общие показатели |
+| Модуль                                 | Статус      | Приоритет | Описание                                     |
+| -------------------------------------- | ----------- | --------- | -------------------------------------------- |
+| **[Auth](./auth/README.md)**           | In Progress | High      | Аутентификация и авторизация (Supabase Auth) |
+| **[Finance](./finance/README.md)**     | Planning    | High      | Учёт доходов/расходов, статистика, подсказки |
+| **[Health](./health/README.md)**       | Stub        | Medium    | Показатели здоровья, рекомендации AI         |
+| **[Assistant](./assistant/README.md)** | Stub        | Medium    | Списки покупок, напоминания, уведомления     |
+| **[Family](./family/README.md)**       | Stub        | Low       | Семейный режим, общие показатели             |
 
 ## Статусы
 
-| Статус | Описание |
-|--------|----------|
-| **Stub** | Заглушка, только базовая документация |
-| **Planning** | Активное планирование, спецификация в разработке |
-| **In Progress** | Реализация начата |
-| **Done** | Модуль готов |
+| Статус          | Описание                                         |
+| --------------- | ------------------------------------------------ |
+| **Stub**        | Заглушка, только базовая документация            |
+| **Planning**    | Активное планирование, спецификация в разработке |
+| **In Progress** | Реализация начата                                |
+| **Done**        | Модуль готов                                     |
 
 ## Архитектура модулей
 
@@ -31,30 +31,30 @@ flowchart TB
         assistant[Assistant Module]
         family[Family Module]
     end
-    
+
     subgraph shared [Shared]
         auth[Auth]
         ui[UI Components]
         data[Data Layer]
     end
-    
+
     finance --> shared
     health --> shared
     assistant --> shared
     family --> shared
-    
+
     family -.->|"читает данные"| finance
     family -.->|"читает данные"| health
 ```
 
 ## Зависимости между модулями
 
-| Модуль | Зависит от | Используется в |
-|--------|------------|----------------|
-| Finance | Auth | Family |
-| Health | Auth | Family |
-| Assistant | Auth | — |
-| Family | Auth, Finance, Health | — |
+| Модуль    | Зависит от            | Используется в |
+| --------- | --------------------- | -------------- |
+| Finance   | Auth                  | Family         |
+| Health    | Auth                  | Family         |
+| Assistant | Auth                  | —              |
+| Family    | Auth, Finance, Health | —              |
 
 ## Общие компоненты
 

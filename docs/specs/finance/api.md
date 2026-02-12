@@ -155,10 +155,7 @@ interface UseCategoriesReturn {
 
   // Мутации
   createCategory: (data: CreateCategoryInput) => Promise<Category>;
-  updateCategory: (
-    id: string,
-    data: UpdateCategoryInput
-  ) => Promise<Category>;
+  updateCategory: (id: string, data: UpdateCategoryInput) => Promise<Category>;
   deleteCategory: (id: string) => Promise<void>;
 }
 

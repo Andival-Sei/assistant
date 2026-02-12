@@ -75,11 +75,11 @@ erDiagram
 
 #### Entity1
 
-| Поле | Тип | Обязательное | Описание |
-|------|-----|--------------|----------|
-| id | uuid | Да | Первичный ключ |
-| name | string | Да | Название |
-| created_at | timestamp | Да | Дата создания |
+| Поле       | Тип       | Обязательное | Описание       |
+| ---------- | --------- | ------------ | -------------- |
+| id         | uuid      | Да           | Первичный ключ |
+| name       | string    | Да           | Название       |
+| created_at | timestamp | Да           | Дата создания  |
 
 ## API / Hooks
 
@@ -105,11 +105,11 @@ const { data, isLoading, create } = useModuleName(options);
 
 ## UI компоненты
 
-| Компонент | Описание | Путь |
-|-----------|----------|------|
-| ModuleList | Список элементов | `components/features/module/ModuleList.tsx` |
+| Компонент  | Описание                      | Путь                                        |
+| ---------- | ----------------------------- | ------------------------------------------- |
+| ModuleList | Список элементов              | `components/features/module/ModuleList.tsx` |
 | ModuleForm | Форма создания/редактирования | `components/features/module/ModuleForm.tsx` |
-| ModuleCard | Карточка элемента | `components/features/module/ModuleCard.tsx` |
+| ModuleCard | Карточка элемента             | `components/features/module/ModuleCard.tsx` |
 
 ## Интеграция с другими модулями
 

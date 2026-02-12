@@ -4,9 +4,40 @@ import { financeService } from "@/lib/services/finance-service";
 import { Category } from "@/types/finance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronRight, Search, ChevronLeft, ArrowLeft } from "lucide-react";
+import {
+  ChevronRight,
+  Search,
+  ChevronLeft,
+  ArrowLeft,
+  type LucideIcon,
+} from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+
+const IconComponent = ({
+  name,
+  className,
+}: {
+  name?: string;
+  className?: string;
+}) => {
+  if (!name) return null;
+
+  const formattedName =
+    name.charAt(0).toUpperCase() +
+    name.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  const pascalName = name
+    .split("-")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join("");
+
+  const iconMap = LucideIcons as unknown as Record<string, LucideIcon>;
+  const Icon =
+    iconMap[formattedName] || iconMap[pascalName] || LucideIcons.HelpCircle;
+
+  return <Icon className={className} />;
+};
 
 interface CategoryPickerProps {
   type: "income" | "expense";
@@ -142,15 +173,29 @@ export function CategoryPicker({
                     <div className="flex items-center gap-3">
                       <div
                         className={cn(
-                          "h-10 w-10 rounded-full flex items-center justify-center text-lg transition-colors",
+                          "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
                           selectedId === cat.id
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
                         )}
+                        style={{
+                          backgroundColor:
+                            selectedId === cat.id
+                              ? undefined
+                              : cat.color
+                                ? `${cat.color}15`
+                                : undefined,
+                          color:
+                            selectedId === cat.id
+                              ? undefined
+                              : cat.color || undefined,
+                        }}
                       >
-                        {/* We could use an icon library mapping here, but for now using first letter or generic icon */}
-                        {/* Ideally we use the 'icon' field from DB mapped to Lucide */}
-                        <span className="capitalize">{cat.name[0]}</span>
+                        {cat.icon ? (
+                          <IconComponent name={cat.icon} className="h-5 w-5" />
+                        ) : (
+                          <span className="capitalize">{cat.name[0]}</span>
+                        )}
                       </div>
                       <span className="font-medium">{cat.name}</span>
                     </div>

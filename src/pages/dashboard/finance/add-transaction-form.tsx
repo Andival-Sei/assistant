@@ -9,13 +9,8 @@ import {
   Camera,
   Search,
   ChevronRight,
-  ArrowLeft,
-  Calendar,
   Check,
-  Trash2,
-  Receipt,
-  ArrowRightLeft,
-  Wallet as WalletIcon,
+  Package,
 } from "lucide-react";
 import { TransactionType, Category } from "@/types/finance";
 import { CategoryPicker } from "@/components/finance/category-picker";
@@ -24,7 +19,13 @@ import { cn } from "@/lib/utils";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { CustomSelect } from "@/components/ui/custom-select";
 
-// Error Boundary (kept same)
+interface FormItem {
+  id: string;
+  amount: string;
+  category: Category | null;
+  description: string;
+}
+
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -38,7 +39,7 @@ class ErrorBoundary extends React.Component<
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: unknown, errorInfo: unknown) {
     console.error("AddTransactionForm Error:", error, errorInfo);
   }
 
@@ -61,12 +62,12 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-interface TransactionItem {
-  id: string;
-  amount: string;
-  category: Category | null;
-  description: string;
-}
+const emptyItem = (): FormItem => ({
+  id: crypto.randomUUID(),
+  amount: "",
+  category: null,
+  description: "",
+});
 
 export function AddTransactionForm({
   walletId: defaultWalletId,
@@ -77,21 +78,18 @@ export function AddTransactionForm({
   const [step, setStep] = useState<"form" | "category">("form");
   const [type, setType] = useState<TransactionType>("expense");
 
-  // Split Transaction State
-  const [items, setItems] = useState<TransactionItem[]>([
-    { id: "1", amount: "", category: null, description: "" },
-  ]);
-  const [activeItemId, setActiveItemId] = useState<string>("1");
+  const [items, setItems] = useState<FormItem[]>([emptyItem()]);
+  const [activeCategoryItemId, setActiveCategoryItemId] = useState<
+    string | null
+  >(null);
 
-  // Global Form State
   const [walletId, setWalletId] = useState(defaultWalletId || "");
   const [toWalletId, setToWalletId] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [receipt, setReceipt] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
 
-  // Derived state for single-item logic (backward compatibility for UI)
-  const isSplit = items.length > 1;
+  const isSplit = type === "expense" && items.length > 1;
   const totalAmount = items.reduce(
     (sum, item) => sum + (Number(item.amount) || 0),
     0
@@ -103,20 +101,19 @@ export function AddTransactionForm({
     queryFn: financeService.getWallets,
   });
 
-  // Auto-select first wallet
   useEffect(() => {
     if (!walletId && wallets && wallets.length > 0) {
       setWalletId(wallets[0].id);
     }
   }, [wallets, walletId]);
 
-  const mutation = useMutation({
-    mutationFn: (data) => financeService.createTransaction(data),
+  const createMutation = useMutation({
+    mutationFn: (
+      data: Parameters<typeof financeService.createTransaction>[0]
+    ) => financeService.createTransaction(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["wallets"] });
-      // Don't close immediately if it's a batch, wait for all?
-      // Actually mutationFn handles single tx. We need to handle batch in handleSubmit.
     },
     onError: (error) => {
       console.error("Failed to create transaction:", error);
@@ -126,16 +123,32 @@ export function AddTransactionForm({
     },
   });
 
+  const createWithItemsMutation = useMutation({
+    mutationFn: (
+      data: Parameters<typeof financeService.createTransactionWithItems>[0]
+    ) => financeService.createTransactionWithItems(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
+    },
+    onError: (error) => {
+      console.error("Failed to create transaction:", error);
+      alert(
+        `Ошибка при сохранении: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`
+      );
+    },
+  });
+
+  const isPending =
+    createMutation.isPending || createWithItemsMutation.isPending;
+
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setReceipt(file);
       setIsScanning(true);
-
-      // Simulate AI processing with multi-item response
       setTimeout(() => {
         setIsScanning(false);
-        // Mock result: 2 items
         setItems([
           {
             id: crypto.randomUUID(),
@@ -156,25 +169,20 @@ export function AddTransactionForm({
   };
 
   const handleAddItem = () => {
-    const newId = crypto.randomUUID();
-    setItems([
-      ...items,
-      { id: newId, amount: "", category: null, description: "" },
-    ]);
-    setActiveItemId(newId);
+    setItems([...items, emptyItem()]);
   };
 
   const handleRemoveItem = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (items.length === 1) return;
-    const newItems = items.filter((i) => i.id !== id);
-    setItems(newItems);
-    if (activeItemId === id) {
-      setActiveItemId(newItems[newItems.length - 1].id);
-    }
+    setItems(items.filter((i) => i.id !== id));
   };
 
-  const updateItem = (id: string, field: keyof TransactionItem, value: any) => {
+  const updateItem = (
+    id: string,
+    field: keyof FormItem,
+    value: string | Category | null
+  ) => {
     setItems(
       items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
@@ -187,45 +195,58 @@ export function AddTransactionForm({
     try {
       if (type === "transfer") {
         if (!toWalletId || !items[0].amount) return;
-        await mutation.mutateAsync({
+        await createMutation.mutateAsync({
           wallet_id: walletId,
           to_wallet_id: toWalletId,
           amount: Number(items[0].amount),
           type: "transfer",
-          description: items[0].description,
+          description: items[0].description || undefined,
           date: date.toISOString(),
         });
+      } else if (type === "expense" && items.length > 1) {
+        const validItems = items.filter(
+          (i) => i.amount && Number(i.amount) > 0
+        );
+        if (validItems.length === 0) return;
+        await createWithItemsMutation.mutateAsync({
+          wallet_id: walletId,
+          type: "expense",
+          date: date.toISOString(),
+          description: undefined,
+          items: validItems.map((i) => ({
+            category_id: i.category?.id ?? null,
+            amount: Number(i.amount),
+            description: i.description || null,
+          })),
+        });
       } else {
-        // Create multiple transactions for expense/income
-        for (const item of items) {
-          if (!item.amount) continue;
-          await mutation.mutateAsync({
-            wallet_id: walletId,
-            category_id: item.category?.id,
-            amount: Number(item.amount),
-            type,
-            description: item.description,
-            date: date.toISOString(),
-            receipt_url: receipt ? URL.createObjectURL(receipt) : undefined,
-          });
-        }
+        const item = items[0];
+        if (!item.amount) return;
+        await createMutation.mutateAsync({
+          wallet_id: walletId,
+          category_id: item.category?.id,
+          amount: Number(item.amount),
+          type,
+          description: item.description || undefined,
+          date: date.toISOString(),
+          receipt_url: receipt ? URL.createObjectURL(receipt) : undefined,
+        });
       }
       setIsOpen(false);
       resetForm();
-    } catch (error) {
+    } catch {
       // Error handled in mutation onError
     }
   };
 
   const resetForm = () => {
-    setItems([{ id: "1", amount: "", category: null, description: "" }]);
-    // setCategory(null); // Removed as state is managed in items
+    setItems([emptyItem()]);
     setReceipt(null);
     setType("expense");
     setDate(new Date());
+    setActiveCategoryItemId(null);
   };
 
-  // Helper options for CustomSelect
   const walletOptions = useMemo(
     () =>
       wallets?.map((w) => ({
@@ -235,6 +256,8 @@ export function AddTransactionForm({
       })) || [],
     [wallets]
   );
+
+  const activeCategoryItem = items.find((i) => i.id === activeCategoryItemId);
 
   if (!isOpen) {
     return (
@@ -248,8 +271,6 @@ export function AddTransactionForm({
     );
   }
 
-  const activeItem = items.find((i) => i.id === activeItemId) || items[0];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
       <motion.div
@@ -257,9 +278,9 @@ export function AddTransactionForm({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col"
+        layout
       >
         <ErrorBoundary>
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-muted/30">
             <h2 className="text-lg font-semibold">
               {step === "category" ? "Выбор категории" : "Новая операция"}
@@ -268,303 +289,455 @@ export function AddTransactionForm({
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
-              disabled={mutation.isPending}
+              disabled={isPending}
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto p-0 scrollbar-hide">
             <AnimatePresence mode="wait">
-              {step === "category" ? (
+              {step === "category" && activeCategoryItem ? (
                 <motion.div
                   key="category-picker"
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
+                  initial={{ x: "100%", opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: "100%", opacity: 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                  className="h-full"
+                  className="h-full flex flex-col overflow-hidden"
                 >
                   <CategoryPicker
-                    type={type as "income" | "expense"}
+                    type={type === "income" ? "income" : "expense"}
                     onSelect={(cat) => {
-                      updateItem(activeItemId, "category", cat);
+                      updateItem(activeCategoryItemId!, "category", cat);
+                      setActiveCategoryItemId(null);
                       setStep("form");
                     }}
-                    onClose={() => setStep("form")}
-                    selectedId={activeItem.category?.id}
+                    onClose={() => {
+                      setActiveCategoryItemId(null);
+                      setStep("form");
+                    }}
+                    selectedId={activeCategoryItem.category?.id}
                   />
                 </motion.div>
               ) : (
-                <motion.form
+                <form
                   key="main-form"
-                  initial={{ x: "-100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "-100%" }}
-                  className="p-6 space-y-6"
                   onSubmit={handleSubmit}
+                  className="flex flex-col flex-1 min-h-0 overflow-hidden"
                 >
-                  {/* Type Switcher */}
-                  <div className="flex p-1 bg-muted rounded-xl relative z-0">
-                    {/* Filter out Transfer if wallets < 2 */}
-                    {(["expense", "income", "transfer"] as const)
-                      .filter(
-                        (t) =>
-                          t !== "transfer" || (wallets && wallets.length >= 2)
-                      )
-                      .map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => {
-                            setType(t);
-                            // Reset to single item if switching to transfer
-                            if (t === "transfer") setItems([items[0]]);
-                          }}
-                          className={cn(
-                            "relative flex-1 py-2 text-sm font-medium rounded-lg transition-colors z-10",
-                            type === t
-                              ? "text-foreground"
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {type === t && (
-                            <motion.div
-                              className="absolute inset-0 bg-background shadow-sm rounded-lg -z-10"
-                              transition={{
-                                type: "spring",
-                                bounce: 0.2,
-                                duration: 0.6,
+                  <motion.div
+                    key={`main-form-${type}`}
+                    initial={{ x: step === "form" ? 0 : "-100%", opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: "-100%", opacity: 0 }}
+                    className="p-6 space-y-6"
+                  >
+                    <LayoutGroup>
+                      <div className="flex p-1 bg-muted rounded-xl relative isolate h-11">
+                        {(["expense", "income", "transfer"] as const)
+                          .filter(
+                            (t) =>
+                              t !== "transfer" ||
+                              (wallets && wallets.length >= 2)
+                          )
+                          .map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => {
+                                setType(t);
+                                setItems([emptyItem()]);
                               }}
-                            />
-                          )}
-                          {t === "expense"
-                            ? "Расход"
-                            : t === "income"
-                              ? "Доход"
-                              : "Перевод"}
-                        </button>
-                      ))}
-                  </div>
+                              className={cn(
+                                "relative flex-1 py-1 text-sm font-medium rounded-lg transition-colors"
+                              )}
+                            >
+                              <AnimatePresence>
+                                {type === t && (
+                                  <motion.div
+                                    layoutId="type-tab"
+                                    className="absolute inset-0 bg-background shadow-sm rounded-lg"
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 30,
+                                    }}
+                                    style={{ zIndex: 0 }}
+                                  />
+                                )}
+                              </AnimatePresence>
+                              <span
+                                className={cn(
+                                  "relative z-10",
+                                  type === t
+                                    ? "text-foreground"
+                                    : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {t === "expense"
+                                  ? "Расход"
+                                  : t === "income"
+                                    ? "Доход"
+                                    : "Перевод"}
+                              </span>
+                            </button>
+                          ))}
+                      </div>
+                    </LayoutGroup>
 
-                  {/* Split Tabs (Only for Expense) */}
-                  {type === "expense" && items.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                      {items.map((item, index) => (
-                        <div
-                          key={item.id}
-                          onClick={() => setActiveItemId(item.id)}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm whitespace-nowrap cursor-pointer transition-all",
-                            activeItemId === item.id
-                              ? "bg-primary/10 border-primary text-primary font-medium"
-                              : "bg-background border-border hover:bg-accent"
-                          )}
+                    {/* Позиции расходов — только когда 2+ позиции */}
+                    <AnimatePresence mode="wait">
+                      {type === "expense" && items.length > 1 ? (
+                        <motion.div
+                          key="positions"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="space-y-4 overflow-hidden"
                         >
-                          <span>
-                            #{index + 1} - {item.amount || "0"}₽
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium flex items-center gap-2">
+                              <Package className="h-4 w-4" />
+                              Позиции
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              Итого: {totalAmount.toLocaleString("ru-RU")} ₽
+                            </span>
+                          </div>
+
+                          <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1">
+                            <AnimatePresence mode="popLayout">
+                              {items.map((item, index) => (
+                                <motion.div
+                                  key={item.id}
+                                  layout
+                                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{
+                                    opacity: 0,
+                                    height: 0,
+                                    scale: 0.98,
+                                    transition: { duration: 0.2 },
+                                  }}
+                                  className="rounded-xl border border-border/60 bg-background/80 p-4 space-y-3"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <span className="text-xs font-medium text-muted-foreground shrink-0 pt-2">
+                                      #{index + 1}
+                                    </span>
+                                    {items.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) =>
+                                          handleRemoveItem(item.id, e)
+                                        }
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <div className="grid gap-3">
+                                    <div className="flex gap-2 items-end">
+                                      <div className="flex-1">
+                                        <label className="text-xs text-muted-foreground block mb-1">
+                                          Описание
+                                        </label>
+                                        <Input
+                                          placeholder="Молоко, Хлеб..."
+                                          value={item.description}
+                                          onChange={(e) =>
+                                            updateItem(
+                                              item.id,
+                                              "description",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="h-9"
+                                        />
+                                      </div>
+                                      <div className="w-24">
+                                        <label className="text-xs text-muted-foreground block mb-1">
+                                          Сумма
+                                        </label>
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          value={item.amount}
+                                          onChange={(e) =>
+                                            updateItem(
+                                              item.id,
+                                              "amount",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="h-9 font-semibold"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div
+                                      className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                                      onClick={() => {
+                                        setActiveCategoryItemId(item.id);
+                                        setStep("category");
+                                      }}
+                                    >
+                                      <span className="text-sm">
+                                        {item.category?.name ?? "Категория"}
+                                      </span>
+                                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </div>
+
                           <Button
                             type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 ml-1 opacity-50 hover:opacity-100 hover:text-destructive"
-                            onClick={(e) => handleRemoveItem(item.id, e)}
+                            variant="outline"
+                            onClick={handleAddItem}
+                            className="w-full border-dashed"
                           >
-                            <X className="h-3 w-3" />
+                            <Plus className="h-4 w-4 mr-2" />
+                            Добавить позицию
                           </Button>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+
+                    {/* Простой ввод: income, transfer, или expense с 1 позицией */}
+                    {(type !== "expense" || items.length === 1) && (
+                      <motion.div
+                        key="simple"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-6"
+                      >
+                        <div className="flex items-center border-b border-input focus-within:border-primary transition-colors">
+                          <span className="text-3xl font-bold mr-2">₽</span>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={items[0]?.amount ?? ""}
+                            onChange={(e) =>
+                              updateItem(items[0].id, "amount", e.target.value)
+                            }
+                            className="h-16 text-3xl font-bold bg-transparent border-0 rounded-none px-0 shadow-none focus-visible:ring-0"
+                          />
                         </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddItem}
-                        className="h-auto py-1.5 px-3 rounded-lg border-dashed"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Поз.
-                      </Button>
-                    </div>
-                  )}
 
-                  {/* Amount Input */}
-                  <div className="flex items-center border-b border-input focus-within:border-primary transition-colors">
-                    <span
-                      className={cn(
-                        "text-3xl font-bold mr-2 transition-colors select-none",
-                        activeItem.amount
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      ₽
-                    </span>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={activeItem.amount}
-                      onChange={(e) =>
-                        updateItem(activeItemId, "amount", e.target.value)
-                      }
-                      className="h-16 text-3xl font-bold bg-transparent border-0 rounded-none px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30"
-                    />
-                  </div>
-
-                  {/* Wallets & Date */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <CustomSelect
-                      label={type === "transfer" ? "Откуда" : "Счет"}
-                      options={walletOptions}
-                      value={walletId}
-                      onChange={setWalletId}
-                    />
-
-                    {type === "transfer" ? (
-                      <CustomSelect
-                        label="Куда"
-                        options={walletOptions.filter(
-                          (o) => o.value !== walletId
-                        )}
-                        value={toWalletId}
-                        onChange={setToWalletId}
-                        placeholder="Выберите счет"
-                      />
-                    ) : (
-                      <div>
-                        <label className="text-xs text-muted-foreground ml-1 mb-1.5 block">
-                          Дата
-                        </label>
-                        <CustomCalendar
-                          selected={date}
-                          onSelect={(d) => d && setDate(d)}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Category Selector (Hidden for Transfer) */}
-                  {type !== "transfer" && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground ml-1">
-                        Категория
-                      </label>
-                      <div
-                        className="flex items-center justify-between p-3 rounded-xl border bg-background hover:bg-accent/50 cursor-pointer transition-all"
-                        onClick={() => setStep("category")}
-                      >
-                        <div className="flex items-center gap-3">
+                        {type === "expense" && items.length === 1 && (
                           <div
-                            className={cn(
-                              "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
-                              activeItem.category
-                                ? "bg-primary/10 text-primary"
-                                : "bg-muted text-muted-foreground"
-                            )}
+                            className="flex items-center justify-between p-3 rounded-xl border bg-background hover:bg-accent/50 cursor-pointer transition-all"
+                            onClick={() => {
+                              setActiveCategoryItemId(items[0].id);
+                              setStep("category");
+                            }}
                           >
-                            {activeItem.category ? (
-                              // Make sure we handle emoji or icon correctly if added later
-                              activeItem.category.name[0].toUpperCase()
-                            ) : (
-                              <Search className="h-4 w-4" />
-                            )}
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={cn(
+                                  "h-9 w-9 rounded-full flex items-center justify-center",
+                                  items[0].category
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-muted text-muted-foreground"
+                                )}
+                              >
+                                {items[0].category ? (
+                                  items[0].category.name[0].toUpperCase()
+                                ) : (
+                                  <Search className="h-4 w-4" />
+                                )}
+                              </div>
+                              <p className="font-medium text-sm">
+                                {items[0].category?.name ??
+                                  "Выберите категорию"}
+                              </p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                           </div>
-                          <div className="text-left">
+                        )}
+
+                        {type === "expense" && items.length === 1 && (
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <label className="text-xs text-muted-foreground ml-1">
+                                Комментарий
+                              </label>
+                              <Input
+                                placeholder="Например: Продукты в Пятерочке"
+                                value={items[0]?.description ?? ""}
+                                onChange={(e) =>
+                                  updateItem(
+                                    items[0].id,
+                                    "description",
+                                    e.target.value
+                                  )
+                                }
+                                className="h-10 rounded-xl"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleAddItem}
+                              className="w-full text-muted-foreground hover:text-foreground"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Разбить на несколько позиций
+                            </Button>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+
+                    {/* Income: категория и комментарий */}
+                    {type === "income" && (
+                      <>
+                        <div
+                          className="flex items-center justify-between p-3 rounded-xl border bg-background hover:bg-accent/50 cursor-pointer"
+                          onClick={() => {
+                            setActiveCategoryItemId(items[0].id);
+                            setStep("category");
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "h-9 w-9 rounded-full flex items-center justify-center",
+                                items[0].category
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {items[0].category ? (
+                                items[0].category.name[0].toUpperCase()
+                              ) : (
+                                <Search className="h-4 w-4" />
+                              )}
+                            </div>
                             <p className="font-medium text-sm">
-                              {activeItem.category
-                                ? activeItem.category.name
-                                : "Выберите категорию"}
+                              {items[0].category?.name ?? "Категория"}
                             </p>
                           </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-muted-foreground ml-1">
-                      Комментарий
-                    </label>
-                    <Input
-                      placeholder="Например: Продукты в Пятерочке"
-                      value={activeItem.description}
-                      onChange={(e) =>
-                        updateItem(activeItemId, "description", e.target.value)
-                      }
-                      className="h-10 rounded-xl bg-background"
-                    />
-                  </div>
-
-                  {/* Receipt Upload / Multi-item Add */}
-                  <div className="flex gap-3">
-                    <label
-                      className={cn(
-                        "flex-1 flex items-center justify-center h-12 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group relative overflow-hidden",
-                        isScanning && "pointer-events-none opacity-80"
-                      )}
-                    >
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleReceiptUpload}
-                        disabled={isScanning}
-                      />
-
-                      {isScanning ? (
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                          <span className="text-xs font-medium text-primary">
-                            Сканируем...
-                          </span>
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground ml-1">
+                            Комментарий
+                          </label>
+                          <Input
+                            placeholder="Зарплата, подарок..."
+                            value={items[0]?.description ?? ""}
+                            onChange={(e) =>
+                              updateItem(
+                                items[0].id,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            className="h-10 rounded-xl"
+                          />
                         </div>
-                      ) : receipt ? (
-                        <div className="flex items-center gap-2 text-primary">
-                          <Check className="h-4 w-4" />
-                          <span className="text-xs font-medium truncate max-w-[100px]">
-                            {receipt.name}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
-                          <Camera className="h-4 w-4" />
-                          <span className="text-xs font-medium">Скан чека</span>
-                        </div>
-                      )}
-                    </label>
-
-                    {type === "expense" && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddItem}
-                        className="flex-1 h-12 rounded-xl border-dashed hover:border-primary/50"
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Добавить позицию
-                      </Button>
+                      </>
                     )}
-                  </div>
+                  </motion.div>
 
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full rounded-xl text-lg h-12 shadow-lg shadow-primary/20"
-                    disabled={
-                      !items.some((i) => i.amount) ||
-                      !walletId ||
-                      (type === "transfer" && !toWalletId) ||
-                      mutation.isPending
-                    }
-                  >
-                    {mutation.isPending
-                      ? "Сохранение..."
-                      : `Сохранить ${isSplit ? `(${totalAmount}₽)` : ""}`}
-                  </Button>
-                </motion.form>
+                  <div className="p-4 border-t bg-muted/20 space-y-4 shrink-0">
+                    <div className="grid grid-cols-2 gap-4">
+                      <CustomSelect
+                        label={type === "transfer" ? "Откуда" : "Счет"}
+                        options={walletOptions}
+                        value={walletId}
+                        onChange={setWalletId}
+                      />
+                      {type === "transfer" ? (
+                        <CustomSelect
+                          label="Куда"
+                          options={walletOptions.filter(
+                            (o) => o.value !== walletId
+                          )}
+                          value={toWalletId}
+                          onChange={setToWalletId}
+                          placeholder="Выберите счет"
+                        />
+                      ) : (
+                        <div>
+                          <label className="text-xs text-muted-foreground ml-1 mb-1.5 block">
+                            Дата
+                          </label>
+                          <CustomCalendar
+                            selected={date}
+                            onSelect={(d) => d && setDate(d)}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3">
+                      <label
+                        className={cn(
+                          "flex-1 flex items-center justify-center h-12 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer",
+                          isScanning && "pointer-events-none opacity-80"
+                        )}
+                      >
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleReceiptUpload}
+                          disabled={isScanning}
+                        />
+                        {isScanning ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                            <span className="text-xs font-medium text-primary">
+                              Сканируем...
+                            </span>
+                          </div>
+                        ) : receipt ? (
+                          <div className="flex items-center gap-2 text-primary">
+                            <Check className="h-4 w-4" />
+                            <span className="text-xs font-medium truncate max-w-[100px]">
+                              {receipt.name}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Camera className="h-4 w-4" />
+                            <span className="text-xs font-medium">
+                              Скан чека
+                            </span>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full rounded-xl text-lg h-12 shadow-lg shadow-primary/20"
+                      disabled={
+                        !items.some((i) => i.amount) ||
+                        !walletId ||
+                        (type === "transfer" && !toWalletId) ||
+                        isPending
+                      }
+                    >
+                      {isPending
+                        ? "Добавление..."
+                        : `Добавить${isSplit ? ` (${totalAmount}₽)` : ""}`}
+                    </Button>
+                  </div>
+                </form>
               )}
             </AnimatePresence>
           </div>

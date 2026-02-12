@@ -94,7 +94,7 @@ export function LoginPage() {
         />
       </div>
 
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-black/20 backdrop-blur-[2px]" />
+      <div className="pointer-events-none absolute inset-0 z-1 bg-black/20 backdrop-blur-[2px]" />
 
       {/* Кнопка возврата */}
       <div className="absolute top-8 left-8 z-20">

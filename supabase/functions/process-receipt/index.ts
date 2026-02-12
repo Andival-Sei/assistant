@@ -8,6 +8,8 @@ const processReceiptWithAI = async (imageUrl: string) => {
   //   messages: [ ... ],
   // });
 
+  console.log("Processing image with AI:", imageUrl);
+
   // Mock response
   return {
     amount: 1540.0,
@@ -22,7 +24,7 @@ const processReceiptWithAI = async (imageUrl: string) => {
   };
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   try {
     const { receipt_url } = await req.json();
 
@@ -47,7 +49,9 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

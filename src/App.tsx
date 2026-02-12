@@ -41,7 +41,7 @@ function App() {
             <DashboardLayout>
               <Routes>
                 <Route index element={<DashboardPage />} />
-                <Route path="finance" element={<FinancePage />} />
+                <Route path="finance/*" element={<FinancePage />} />
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Routes>
