@@ -1,0 +1,265 @@
+# Finance: Модель данных
+
+> 📋 **Статус: Спецификация**
+> Схема данных основана на Pennora. Таблицы будут созданы при настройке Supabase.
+
+Схема данных для модуля финансов. Основана на реализации из Pennora с упрощениями для MVP.
+
+## ER-диаграмма
+
+```mermaid
+erDiagram
+    users ||--o{ accounts : has
+    users ||--o{ categories : has
+    accounts ||--o{ transactions : has
+    categories ||--o{ transactions : categorizes
+    categories ||--o{ categories : parent
+
+    users {
+        uuid id PK
+        string email
+        timestamp created_at
+    }
+
+    accounts {
+        uuid id PK
+        uuid user_id FK
+        string name
+        enum type
+        decimal balance
+        string currency
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    categories {
+        uuid id PK
+        uuid user_id FK
+        uuid parent_id FK
+        string name
+        enum type
+        string icon
+        boolean is_system
+        timestamp created_at
+    }
+
+    transactions {
+        uuid id PK
+        uuid user_id FK
+        uuid account_id FK
+        uuid to_account_id FK
+        uuid category_id FK
+        enum type
+        decimal amount
+        string currency
+        string description
+        date date
+        timestamp created_at
+        timestamp updated_at
+    }
+```
+
+## Таблицы
+
+### accounts
+
+Счета пользователя (карты, наличные, etc.).
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| id | uuid | Да | Первичный ключ |
+| user_id | uuid | Да | FK на users |
+| name | varchar(100) | Да | Название счёта |
+| type | enum | Да | Тип: `card`, `cash`, `other` |
+| balance | decimal(15,2) | Да | Текущий баланс |
+| currency | varchar(3) | Да | Код валюты (RUB, USD, etc.) |
+| created_at | timestamptz | Да | Дата создания |
+| updated_at | timestamptz | Да | Дата обновления |
+
+**Индексы:**
+
+- `accounts_user_id_idx` — по user_id
+
+**RLS:**
+
+- Пользователь видит только свои счета
+- Пользователь может создавать/изменять/удалять только свои счета
+
+### categories
+
+Категории транзакций (иерархические).
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| id | uuid | Да | Первичный ключ |
+| user_id | uuid | Нет | FK на users (null для системных) |
+| parent_id | uuid | Нет | FK на categories (родительская) |
+| name | varchar(100) | Да | Название категории |
+| type | enum | Да | Тип: `income`, `expense` |
+| icon | varchar(50) | Нет | Название иконки (lucide) |
+| is_system | boolean | Да | Системная категория (нельзя удалить) |
+| created_at | timestamptz | Да | Дата создания |
+
+**Индексы:**
+
+- `categories_user_id_idx` — по user_id
+- `categories_parent_id_idx` — по parent_id
+- `categories_type_idx` — по type
+
+**RLS:**
+
+- Пользователь видит системные + свои категории
+- Пользователь может изменять/удалять только свои категории
+
+### transactions
+
+Транзакции (доходы, расходы, переводы).
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| id | uuid | Да | Первичный ключ |
+| user_id | uuid | Да | FK на users |
+| account_id | uuid | Да | FK на accounts (счёт списания/зачисления) |
+| to_account_id | uuid | Нет | FK на accounts (для переводов) |
+| category_id | uuid | Да | FK на categories |
+| type | enum | Да | Тип: `income`, `expense`, `transfer` |
+| amount | decimal(15,2) | Да | Сумма (всегда положительная) |
+| currency | varchar(3) | Да | Код валюты |
+| description | text | Нет | Описание транзакции |
+| date | date | Да | Дата транзакции |
+| created_at | timestamptz | Да | Дата создания |
+| updated_at | timestamptz | Да | Дата обновления |
+
+**Индексы:**
+
+- `transactions_user_id_idx` — по user_id
+- `transactions_account_id_idx` — по account_id
+- `transactions_category_id_idx` — по category_id
+- `transactions_date_idx` — по date
+- `transactions_type_idx` — по type
+
+**RLS:**
+
+- Пользователь видит только свои транзакции
+- Пользователь может создавать/изменять/удалять только свои транзакции
+
+## Типы (Enums)
+
+### account_type
+
+```sql
+CREATE TYPE account_type AS ENUM ('card', 'cash', 'other');
+```
+
+### category_type
+
+```sql
+CREATE TYPE category_type AS ENUM ('income', 'expense');
+```
+
+### transaction_type
+
+```sql
+CREATE TYPE transaction_type AS ENUM ('income', 'expense', 'transfer');
+```
+
+## TypeScript типы
+
+```typescript
+// Типы счетов
+type AccountType = "card" | "cash" | "other";
+
+interface Account {
+  id: string;
+  user_id: string;
+  name: string;
+  type: AccountType;
+  balance: number;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Типы категорий
+type CategoryType = "income" | "expense";
+
+interface Category {
+  id: string;
+  user_id: string | null;
+  parent_id: string | null;
+  name: string;
+  type: CategoryType;
+  icon: string | null;
+  is_system: boolean;
+  created_at: string;
+}
+
+// Типы транзакций
+type TransactionType = "income" | "expense" | "transfer";
+
+interface Transaction {
+  id: string;
+  user_id: string;
+  account_id: string;
+  to_account_id: string | null;
+  category_id: string;
+  type: TransactionType;
+  amount: number;
+  currency: string;
+  description: string | null;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+## Системные категории
+
+При регистрации пользователя создаются базовые категории:
+
+### Расходы
+
+| Название | Иконка | Подкатегории |
+|----------|--------|--------------|
+| Еда | utensils | Продукты, Рестораны, Доставка |
+| Транспорт | car | Топливо, Общественный, Такси |
+| Жильё | home | Аренда, Коммуналка |
+| Покупки | shopping-bag | Одежда, Электроника |
+| Развлечения | gamepad | Кино, Игры, Подписки |
+| Здоровье | heart | Аптеки, Врачи |
+| Другое | more-horizontal | — |
+
+### Доходы
+
+| Название | Иконка |
+|----------|--------|
+| Зарплата | briefcase |
+| Фриланс | laptop |
+| Подарки | gift |
+| Другое | more-horizontal |
+
+## Валюты
+
+Поддерживаемые валюты (из Pennora):
+
+| Код | Название | Символ |
+|-----|----------|--------|
+| RUB | Российский рубль | ₽ |
+| USD | Доллар США | $ |
+| EUR | Евро | € |
+| GBP | Фунт стерлингов | £ |
+| KZT | Казахстанский тенге | ₸ |
+| UAH | Украинская гривна | ₴ |
+
+## Миграции
+
+Базовые миграции находятся в `reference/pennora/supabase/migrations/`:
+
+- `20250101000000_create_default_categories.sql` — системные категории
+- Схема таблиц — в других миграциях
+
+## Референс
+
+- Типы из Pennora: `reference/pennora/lib/types/`
+- Валидации: `reference/pennora/lib/validations/`
+- Миграции: `reference/pennora/supabase/migrations/`

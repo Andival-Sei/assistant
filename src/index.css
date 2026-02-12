@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.75rem;
+  --background: #fff;
+  --foreground: #09090b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #10b981;
+  --card: #fff;
+  --card-foreground: #09090b;
+  --popover: #fff;
+  --popover-foreground: #09090b;
+  --primary: #10b981;
+  --primary-foreground: #fff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fff;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #10b981;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #00dc82;
+  --primary-foreground: #000;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fef2f2;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
+/* React Day Picker Overrides */
+.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: var(--primary);
+  --rdp-background-color: var(--primary-foreground);
+  margin: 0;
+}
+
+.rdp-day_selected:not([aria-disabled="true"]),
+.rdp-day_selected:focus:not([aria-disabled="true"]),
+.rdp-day_selected:active:not([aria-disabled="true"]),
+.rdp-day_selected:hover:not([aria-disabled="true"]) {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-radius: var(--radius-md);
+}
+
+.rdp-button:focus,
+.rdp-button:active,
+.rdp-day:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent;
+}
+
+.rdp-day:hover:not(.rdp-day_selected) {
+  background-color: var(--accent) !important;
+  border-radius: var(--radius-md);
+}
+
+.rdp-nav_button {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+}
+
+.rdp-caption_dropdowns {
+  display: flex !important;
+  gap: 0.5rem;
+}
+
+.type-button {
+  /* Helper to ensure no default button styles interfere */
+  appearance: none;
+}

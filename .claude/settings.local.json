@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(move \"f:\\\\pet-projects\\\\assistant\\\\docs\\\\concepts\\\\architecture.md\" \"f:\\\\pet-projects\\\\assistant\\\\docs\\\\concepts\\\\target-architecture.md\")",
+      "Bash(du:*)"
+    ]
+  }
+}
