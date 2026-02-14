@@ -20,6 +20,10 @@ pnpm dev       # dev-сервер (http://localhost:5173)
 
 Подробнее: [Начало работы](./docs/guides/getting-started.md)
 
+## Онлайн-версия
+
+Приложение задеплоено на Vercel: [`https://assistant-two-beta.vercel.app/`](https://assistant-two-beta.vercel.app/).
+
 ## Стек
 
 - **Фронт:** Vite + React 19 + TypeScript + React Router

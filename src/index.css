@@ -150,6 +150,27 @@ html {
   border-radius: var(--radius-md);
 }
 
+.calendar-modal .rdp-day_selected:not([aria-disabled="true"]),
+.calendar-modal .rdp-day_selected:focus:not([aria-disabled="true"]),
+.calendar-modal .rdp-day_selected:active:not([aria-disabled="true"]),
+.calendar-modal .rdp-day_selected:hover:not([aria-disabled="true"]) {
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
+}
+
+.calendar-modal .rdp-day_today {
+  background-color: transparent !important;
+  color: var(--foreground) !important;
+  font-weight: 500;
+}
+
+.calendar-modal .rdp-button:focus,
+.calendar-modal .rdp-button:active,
+.calendar-modal .rdp-day:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .rdp-button:focus,
 .rdp-button:active,
 .rdp-day:focus {

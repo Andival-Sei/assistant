@@ -14,15 +14,18 @@ import type { TransactionWithItems } from "@/types/finance";
 import { groupByDate } from "@/lib/utils/date";
 import { pluralizePosition } from "@/lib/utils/pluralize";
 import { motion, AnimatePresence } from "framer-motion";
+import type {
+  TransactionFilterType,
+  TransactionSortBy,
+} from "./tabs/transactions-tab";
+import { parseISO } from "date-fns";
 
 function DateHeader({ date }: { date: string }) {
   return (
-    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur py-2 -mx-4 px-4 border-b">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-muted-foreground">
-          {date}
-        </span>
+    <div className="sticky top-0 z-10 pt-1 pb-2">
+      <div className="inline-flex items-center gap-2 rounded-full bg-muted/40 px-3 py-1.5 text-muted-foreground">
+        <Calendar className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-medium">{date}</span>
       </div>
     </div>
   );
@@ -41,7 +44,7 @@ function TransactionRow({
 
   return (
     <div className="group">
-      <div className="flex items-center justify-between rounded-2xl border border-border/40 bg-card/40 p-4 transition-all hover:bg-card hover:shadow-md">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-card/50 px-4 py-3.5 transition-all hover:border-border hover:bg-card hover:shadow-sm">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div
             className={cn(
@@ -108,7 +111,7 @@ function TransactionRow({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="ml-14 pl-4 border-l-2 border-muted mt-1 mb-2"
+            className="ml-12 pl-4 border-l-2 border-border/60 mt-2 mb-1 rounded-r"
           >
             <div className="space-y-1 py-2">
               {tx.items.map((item) => (
@@ -139,14 +142,46 @@ function TransactionRow({
   );
 }
 
+export interface TransactionListFilter {
+  type?: TransactionFilterType;
+  walletId?: string;
+}
+
 interface TransactionListProps {
   limit?: number;
   search?: string;
+  filter?: TransactionListFilter;
+  sortBy?: TransactionSortBy;
+}
+
+function sortTransactions(
+  list: TransactionWithItems[],
+  sortBy: TransactionSortBy
+): TransactionWithItems[] {
+  const arr = [...list];
+  switch (sortBy) {
+    case "dateDesc":
+      return arr.sort(
+        (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
+      );
+    case "dateAsc":
+      return arr.sort(
+        (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
+      );
+    case "amountDesc":
+      return arr.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+    case "amountAsc":
+      return arr.sort((a, b) => Math.abs(a.amount) - Math.abs(b.amount));
+    default:
+      return arr;
+  }
 }
 
 export function TransactionList({
   limit = 20,
   search = "",
+  filter,
+  sortBy = "dateDesc",
 }: TransactionListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -157,11 +192,23 @@ export function TransactionList({
 
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
-    if (!search) return transactions;
-    return transactions.filter((tx) =>
-      tx.description?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [transactions, search]);
+    let list = transactions;
+
+    if (search) {
+      list = list.filter((tx) =>
+        tx.description?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (filter?.type && filter.type !== "all") {
+      list = list.filter((tx) => tx.type === filter.type);
+    }
+    if (filter?.walletId) {
+      list = list.filter((tx) => tx.wallet_id === filter.walletId);
+    }
+
+    return sortTransactions(list, sortBy);
+  }, [transactions, search, filter?.type, filter?.walletId, sortBy]);
 
   const grouped = useMemo(() => {
     if (!filteredTransactions.length)
@@ -180,11 +227,11 @@ export function TransactionList({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
+      <div className="px-4 py-4 space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="h-16 w-full animate-pulse rounded-2xl bg-muted/50"
+            className="h-14 w-full animate-pulse rounded-xl bg-muted/50"
           />
         ))}
       </div>
@@ -193,21 +240,39 @@ export function TransactionList({
 
   if (!transactions?.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
-        <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
-        <h3 className="mt-4 text-sm font-medium text-foreground">
-          Транзакций пока нет
-        </h3>
+      <div className="px-4 py-8">
+        <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
+          <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
+          <h3 className="mt-4 text-sm font-medium text-foreground">
+            Транзакций пока нет
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (!filteredTransactions.length) {
+    return (
+      <div className="px-4 py-8">
+        <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
+          <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
+          <h3 className="mt-4 text-sm font-medium text-foreground">
+            Ничего не найдено
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Измените поиск или фильтры
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="px-4 py-4 space-y-5">
       {Array.from(grouped.entries()).map(([dateKey, dateTransactions]) => (
         <div key={dateKey} className="space-y-3">
           <DateHeader date={dateKey} />
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {dateTransactions.map((tx, index) => (
               <FadeIn
                 key={tx.id}

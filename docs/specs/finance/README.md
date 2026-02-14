@@ -1,6 +1,6 @@
 # Модуль: Finance
 
-> **Статус:** Planning  
+> **Статус:** In Progress  
 > **Приоритет:** High  
 > **Зависимости:** Auth (Supabase)
 

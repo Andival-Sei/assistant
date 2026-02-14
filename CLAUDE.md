@@ -29,6 +29,7 @@ pnpm typecheck    # Проверка типов TypeScript
 | Family    | Объединение в семьи, общие показатели    | Не начат            |
 
 > **Текущее состояние:** Реализован только лендинг. Модули будут добавлены по [roadmap](./docs/meta/roadmap.md).
+> **Продакшн-деплой:** лендинг доступен на Vercel по адресу [`https://assistant-two-beta.vercel.app/`](https://assistant-two-beta.vercel.app/).
 
 ## Технологический стек
 

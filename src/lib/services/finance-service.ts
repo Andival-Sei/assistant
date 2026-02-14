@@ -1,4 +1,8 @@
 import { supabaseClient } from "@/lib/db/supabase-client";
+import {
+  DEFAULT_SEED_CATEGORIES,
+  type SeedCategory,
+} from "@/lib/db/seed-categories-data";
 import type {
   Wallet,
   Category,
@@ -51,9 +55,22 @@ export const financeService = {
   },
 
   async createWallet(wallet: Partial<Wallet>): Promise<Wallet> {
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
+
+    if (!user?.id) {
+      throw new Error("Пользователь не авторизован");
+    }
+
+    const row = {
+      ...wallet,
+      user_id: wallet.user_id ?? user.id,
+    };
+
     const { data, error } = await supabaseClient
       .from("wallets")
-      .insert([wallet])
+      .insert([row])
       .select()
       .single();
 
@@ -61,11 +78,47 @@ export const financeService = {
     return data;
   },
 
-  // Categories
+  async updateWallet(id: string, updates: Partial<Wallet>): Promise<Wallet> {
+    const { data, error } = await supabaseClient
+      .from("wallets")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteWallet(id: string): Promise<void> {
+    const { error } = await supabaseClient
+      .from("wallets")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+  },
+
+  async hasWalletTransactions(walletId: string): Promise<boolean> {
+    const { count, error } = await supabaseClient
+      .from("transactions")
+      .select("*", { count: "exact", head: true })
+      .eq("wallet_id", walletId);
+
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  },
+
+  // Categories — только категории текущего пользователя (игнорируем системные user_id = null)
   async getCategories(): Promise<Category[]> {
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
+    if (!user?.id) return [];
+
     const { data, error } = await supabaseClient
       .from("categories")
       .select("*")
+      .eq("user_id", user.id)
       .order("name");
 
     if (error) throw error;
@@ -78,7 +131,6 @@ export const financeService = {
     } = await supabaseClient.auth.getUser();
     if (!user?.id) throw new Error("Пользователь не авторизован");
 
-    // Проверяем, есть ли уже категории
     const { count } = await supabaseClient
       .from("categories")
       .select("*", { count: "exact", head: true })
@@ -86,58 +138,45 @@ export const financeService = {
 
     if (count && count > 0) return;
 
-    // Массив категорий (упрощенная версия из референса для начала)
-    const defaultCategories: Array<Partial<Category>> = [
-      // Доходы
-      { name: "Зарплата", type: "income", icon: "briefcase", color: "#10b981" },
-      {
-        name: "Подарки (Доход)",
-        type: "income",
-        icon: "gift",
-        color: "#10b981",
-      },
-      {
-        name: "Инвестиции",
-        type: "income",
-        icon: "trending-up",
-        color: "#10b981",
-      },
-      // Расходы
-      { name: "Еда", type: "expense", icon: "utensils", color: "#ef4444" },
-      { name: "Транспорт", type: "expense", icon: "car", color: "#3b82f6" },
-      { name: "Жильё", type: "expense", icon: "home", color: "#a855f7" },
-      { name: "Здоровье", type: "expense", icon: "heart", color: "#ef4444" },
-      {
-        name: "Развлечения",
-        type: "expense",
-        icon: "clapperboard",
-        color: "#ec4899",
-      },
-      {
-        name: "Покупки",
-        type: "expense",
-        icon: "shopping-bag",
-        color: "#6366f1",
-      },
-      { name: "Связь", type: "expense", icon: "smartphone", color: "#3b82f6" },
-      {
-        name: "Прочее",
-        type: "expense",
-        icon: "more-horizontal",
-        color: "#6b7280",
-      },
-    ];
+    // Уровень по родителю: корень = 0, иначе уровень родителя + 1
+    const levelByName = new Map<string, number>();
+    for (const c of DEFAULT_SEED_CATEGORIES) {
+      const level = c.parent ? (levelByName.get(c.parent) ?? 0) + 1 : 0;
+      levelByName.set(c.name, level);
+    }
 
-    const toInsert = defaultCategories.map((cat) => ({
-      ...cat,
-      user_id: user.id,
-      is_default: true,
-    }));
+    const byLevel = new Map<number, SeedCategory[]>();
+    for (const c of DEFAULT_SEED_CATEGORIES) {
+      const level = levelByName.get(c.name) ?? 0;
+      if (!byLevel.has(level)) byLevel.set(level, []);
+      byLevel.get(level)!.push(c);
+    }
 
-    const { error } = await supabaseClient.from("categories").insert(toInsert);
-    if (error) throw error;
+    const idByName = new Map<string, string>();
+    const maxLevel = Math.max(...byLevel.keys());
 
-    // После создания основных, можно добавить подкатегории, но для MVP начнем с плоского списка
+    for (let level = 0; level <= maxLevel; level++) {
+      const batch = byLevel.get(level) ?? [];
+      const toInsert = batch.map((cat) => ({
+        user_id: user.id,
+        name: cat.name,
+        type: cat.type,
+        icon: cat.icon ?? null,
+        color: cat.color ?? null,
+        is_default: true,
+        parent_id: cat.parent ? (idByName.get(cat.parent) ?? null) : null,
+      }));
+
+      const { data: inserted, error } = await supabaseClient
+        .from("categories")
+        .insert(toInsert)
+        .select("id, name");
+
+      if (error) throw error;
+      for (const row of inserted ?? []) {
+        idByName.set(row.name, row.id);
+      }
+    }
   },
 
   // Transactions

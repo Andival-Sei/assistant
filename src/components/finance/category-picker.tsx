@@ -44,6 +44,7 @@ interface CategoryPickerProps {
   onSelect: (category: Category) => void;
   selectedId?: string;
   onClose: () => void;
+  className?: string;
 }
 
 export function CategoryPicker({
@@ -51,17 +52,32 @@ export function CategoryPicker({
   onSelect,
   selectedId,
   onClose,
+  className,
 }: CategoryPickerProps) {
   const [search, setSearch] = useState("");
   const [parentStack, setParentStack] = useState<Category[]>([]); // For navigation history
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: financeService.getCategories,
+    refetchOnMount: "always",
   });
 
+  // Если у типа один корневой уровень с подкатегориями (например "Доходы") — показываем подкатегории сразу
+  const effectiveRoot = useMemo(() => {
+    if (!categories) return null;
+    const byType = categories.filter((c) => c.type === type);
+    const roots = byType.filter((c) => (c.parent_id || null) === null);
+    if (roots.length !== 1) return null;
+    const root = roots[0];
+    const hasChildren = byType.some((c) => c.parent_id === root.id);
+    return hasChildren ? root : null;
+  }, [categories, type]);
+
   const currentParentId =
-    parentStack.length > 0 ? parentStack[parentStack.length - 1].id : null;
+    parentStack.length > 0
+      ? parentStack[parentStack.length - 1].id
+      : (effectiveRoot?.id ?? null);
 
   // Filter categories based on type, search, and current parent
   const filteredCategories = useMemo(() => {
@@ -98,37 +114,81 @@ export function CategoryPicker({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-2xl overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center gap-2 mb-4">
-          {parentStack.length > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              className="-ml-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="-ml-2"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-          )}
-          <h3 className="font-semibold text-lg">
-            {parentStack.length > 0
-              ? parentStack[parentStack.length - 1].name
-              : "Выберите категорию"}
-          </h3>
+    <div
+      className={cn(
+        "flex flex-col h-full bg-background overflow-hidden",
+        className
+      )}
+    >
+      <div className="p-4 border-b shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {parentStack.length > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                className="-ml-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="-ml-2"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <h3 className="font-semibold text-lg">Категории</h3>
+          </div>
         </div>
+
+        <div className="text-xs text-muted-foreground mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {effectiveRoot && parentStack.length === 0 ? (
+              <span className="text-foreground font-medium">
+                {effectiveRoot.name}
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setParentStack([])}
+                  className={cn(
+                    "hover:text-foreground transition-colors",
+                    parentStack.length === 0 && "text-foreground font-medium"
+                  )}
+                >
+                  Главная
+                </button>
+                {parentStack.map((cat, index) => (
+                  <div key={cat.id} className="flex items-center gap-2">
+                    <span className="text-muted-foreground">/</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setParentStack(parentStack.slice(0, index + 1))
+                      }
+                      className={cn(
+                        "hover:text-foreground transition-colors",
+                        index === parentStack.length - 1 &&
+                          "text-foreground font-medium"
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -140,9 +200,8 @@ export function CategoryPicker({
         </div>
       </div>
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto p-2">
-        {!categories ? (
+        {categoriesLoading && !categories ? (
           <div className="p-4 text-center text-muted-foreground">
             Загрузка...
           </div>
