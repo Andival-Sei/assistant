@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { toast } from "sonner";
+import { generateUUID } from "@/lib/utils/uuid";
 
 interface FormItem {
   id: string;
@@ -67,7 +68,7 @@ class ErrorBoundary extends React.Component<
 }
 
 const emptyItem = (): FormItem => ({
-  id: crypto.randomUUID(),
+  id: generateUUID(),
   amount: "",
   category: null,
   description: "",
@@ -129,6 +130,12 @@ export function AddTransactionForm({
   const [receipt, setReceipt] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+
+  // Проверка доступности камеры
+  const isCameraAvailable = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }, []);
 
   const isSplit = type === "expense" && items.length > 1;
   const totalAmount = items.reduce(
@@ -214,7 +221,7 @@ export function AddTransactionForm({
                   item.category_suggestion?.toLowerCase()
               );
               return {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 amount: String(item.amount),
                 category: suggestedCategory || null,
                 description: item.name,
@@ -229,7 +236,7 @@ export function AddTransactionForm({
           );
           setItems([
             {
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               amount: String(result.total_amount || 0),
               category: suggestedCategory || null,
               description: result.merchant || "Чек",
@@ -276,7 +283,7 @@ export function AddTransactionForm({
                 c.name.toLowerCase() === item.category_suggestion?.toLowerCase()
             );
             return {
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               amount: String(item.amount),
               category: suggestedCategory || null,
               description: item.name,
@@ -291,7 +298,7 @@ export function AddTransactionForm({
         );
         setItems([
           {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             amount: String(result.total_amount || 0),
             category: suggestedCategory || null,
             description: result.merchant || "Чек",
@@ -953,19 +960,35 @@ export function AddTransactionForm({
                                     </div>
                                   )}
                                 </label>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setIsCameraOpen(true)}
-                                  disabled={isScanning}
-                                  className="h-10 rounded-xl"
-                                >
-                                  <Camera className="h-4 w-4 mr-2" />
-                                  <span className="text-xs font-medium">
-                                    Фото
-                                  </span>
-                                </Button>
+                                {isCameraAvailable ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsCameraOpen(true)}
+                                    disabled={isScanning}
+                                    className="h-10 rounded-xl"
+                                  >
+                                    <Camera className="h-4 w-4 mr-2" />
+                                    <span className="text-xs font-medium">
+                                      Фото
+                                    </span>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled
+                                    className="h-10 rounded-xl opacity-50 cursor-not-allowed"
+                                    title="Камера недоступна. Требуется HTTPS-соединение."
+                                  >
+                                    <Camera className="h-4 w-4 mr-2" />
+                                    <span className="text-xs font-medium">
+                                      Фото
+                                    </span>
+                                  </Button>
+                                )}
                               </div>
                             </div>
 

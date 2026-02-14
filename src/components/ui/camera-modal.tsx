@@ -31,6 +31,24 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         setIsLoading(true);
         setError(null);
 
+        // Проверка доступности MediaDevices API
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          let message =
+            "Камера недоступна. Убедитесь, что вы используете современный браузер.";
+
+          // Проверка HTTPS
+          if (
+            location.protocol !== "https:" &&
+            location.hostname !== "localhost" &&
+            location.hostname !== "127.0.0.1"
+          ) {
+            message =
+              "Для доступа к камере требуется HTTPS-соединение. Используйте безопасное соединение или localhost.";
+          }
+
+          throw new Error(message);
+        }
+
         // Остановить предыдущий поток
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
@@ -74,10 +92,42 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
           }
         }
       } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Не удалось получить доступ к камере";
+        let errorMessage = "Не удалось получить доступ к камере";
+
+        if (err instanceof Error) {
+          // Обработка разных типов ошибок
+          if (
+            err.name === "NotAllowedError" ||
+            err.message.includes("Permission denied")
+          ) {
+            errorMessage =
+              "Доступ к камере запрещён. Разрешите доступ к камере в настройках браузера.";
+          } else if (
+            err.name === "NotFoundError" ||
+            err.message.includes("No device")
+          ) {
+            errorMessage =
+              "Камера не найдена. Убедитесь, что камера подключена и работает.";
+          } else if (
+            err.name === "NotReadableError" ||
+            err.message.includes("in use")
+          ) {
+            errorMessage =
+              "Камера уже используется другим приложением. Закройте другие приложения, использующие камеру.";
+          } else if (
+            err.name === "OverconstrainedError" ||
+            err.message.includes("constraints")
+          ) {
+            errorMessage =
+              "Камера не поддерживает требуемые параметры. Попробуйте переключить камеру.";
+          } else if (err.message.includes("HTTPS")) {
+            errorMessage =
+              "Для доступа к камере требуется HTTPS-соединение. Используйте безопасное соединение.";
+          } else {
+            errorMessage = err.message;
+          }
+        }
+
         setError(errorMessage);
         console.error("Camera error:", err);
       } finally {
@@ -223,11 +273,39 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
               <p className="text-sm">Загрузка камеры...</p>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center gap-2 text-center p-4">
-              <p className="text-red-500">{error}</p>
-              <p className="text-sm text-muted-foreground">
-                Убедитесь что вы разрешили доступ к камере
-              </p>
+            <div className="flex flex-col items-center gap-4 text-center p-6">
+              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                <X className="h-6 w-6 text-red-500" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-red-500 font-medium">{error}</p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>Убедитесь что вы разрешили доступ к камере</p>
+                  {location.protocol !== "https:" &&
+                    location.hostname !== "localhost" &&
+                    location.hostname !== "127.0.0.1" && (
+                      <p className="text-amber-500 font-medium">
+                        ⚠️ Требуется HTTPS-соединение для доступа к камере
+                      </p>
+                    )}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                >
+                  Обновить страницу
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleCamera}
+                >
+                  Попробовать снова
+                </Button>
+              </div>
             </div>
           ) : (
             <>
