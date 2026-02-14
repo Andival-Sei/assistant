@@ -108,13 +108,13 @@ export function FinancePage() {
 
       {/* Tabs Navigation */}
       <div className="border-b border-border">
-        <div className="flex gap-8">
+        <div className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <Link
               key={tab.id}
               to={tab.path}
               className={cn(
-                "pb-4 text-sm font-medium transition-colors relative",
+                "pb-4 text-sm font-medium transition-colors relative whitespace-nowrap flex-shrink-0",
                 activeTab === tab.id
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"

@@ -24,6 +24,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     if (!isOpen) return;
 
     const videoElement = videoRef.current;
+    let playVideoHandler: (() => void) | null = null;
 
     const initCamera = async () => {
       try {
@@ -45,17 +46,32 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         });
 
         if (videoElement) {
+          console.log("Setting video stream...");
           videoElement.srcObject = mediaStream;
           streamRef.current = mediaStream;
           setStream(mediaStream);
 
-          // Убедимся что видео запустилось
-          videoElement.onloadedmetadata = () => {
-            videoElement?.play().catch((e) => {
-              console.error("Play error:", e);
+          // Функция воспроизведения видео
+          playVideoHandler = async () => {
+            try {
+              console.log("Attempting to play video...");
+              await videoElement.play();
+              console.log("Video playing successfully");
+            } catch (playErr) {
+              console.error("Play error:", playErr);
               setError("Не удалось запустить видеопоток");
-            });
+            }
           };
+
+          // Если метаданные уже загружены
+          if (videoElement.readyState >= 2) {
+            playVideoHandler();
+          } else {
+            // Ждём загрузки метаданных
+            videoElement.addEventListener("loadedmetadata", playVideoHandler, {
+              once: true,
+            });
+          }
         }
       } catch (err) {
         const errorMessage =
@@ -79,34 +95,70 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         streamRef.current = null;
       }
       if (videoElement) {
+        // Удаляем слушателя если он был установлен
+        if (playVideoHandler) {
+          videoElement.removeEventListener("loadedmetadata", playVideoHandler);
+        }
         videoElement.srcObject = null;
       }
     };
   }, [isOpen, facingMode]);
 
   const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    // Установка размеров канваса
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Отрисовка видео на канвас
-    ctx.drawImage(video, 0, 0);
-
-    // Преобразование в blob и отправка
-    canvas.toBlob((blob) => {
-      if (blob) {
-        onCapture(blob);
-        handleClose();
+    try {
+      if (!videoRef.current || !canvasRef.current) {
+        console.error("Missing refs");
+        return;
       }
-    }, "image/jpeg");
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      console.log("Video dimensions:", {
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        readyState: video.readyState,
+        networkState: video.networkState,
+      });
+
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        setError("Видео ещё не загружено, подождите...");
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.error("Failed to get canvas context");
+        return;
+      }
+
+      // Установка размеров канваса
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Отрисовка видео на канвас
+      ctx.drawImage(video, 0, 0);
+
+      // Преобразование в blob и отправка
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            console.log("Captured image, blob size:", blob.size);
+            onCapture(blob);
+            handleClose();
+          } else {
+            setError("Не удалось захватить изображение");
+          }
+        },
+        "image/jpeg",
+        0.95
+      );
+    } catch (err) {
+      console.error("Capture error:", err);
+      setError(
+        `Ошибка при захвате: ${err instanceof Error ? err.message : "неизвестная ошибка"}`
+      );
+    }
   };
 
   const handleToggleCamera = () => {

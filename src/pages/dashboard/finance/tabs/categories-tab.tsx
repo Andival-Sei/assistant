@@ -234,11 +234,11 @@ export function CategoriesTab() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 bg-card/30 p-4 rounded-3xl border border-border/50 backdrop-blur-xl">
         <div className="flex items-center justify-between">
-          <div className="flex p-1 bg-muted/50 rounded-2xl w-fit">
+          <div className="flex p-1 bg-muted/50 rounded-2xl w-full sm:w-fit overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab("expense")}
               className={cn(
-                "px-6 py-2 text-sm font-medium rounded-xl transition-all",
+                "px-4 sm:px-6 py-2 text-sm font-medium rounded-xl transition-all whitespace-nowrap flex-shrink-0",
                 activeTab === "expense"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -249,7 +249,7 @@ export function CategoriesTab() {
             <button
               onClick={() => setActiveTab("income")}
               className={cn(
-                "px-6 py-2 text-sm font-medium rounded-xl transition-all",
+                "px-4 sm:px-6 py-2 text-sm font-medium rounded-xl transition-all whitespace-nowrap flex-shrink-0",
                 activeTab === "income"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
