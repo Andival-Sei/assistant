@@ -911,53 +911,62 @@ export function AddTransactionForm({
                               )}
                             </div>
 
-                            <div className="flex gap-3">
-                              <label
-                                className={cn(
-                                  "flex-1 flex items-center justify-center h-12 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group",
-                                  isScanning && "pointer-events-none opacity-80"
-                                )}
-                              >
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  accept="image/*,.eml"
-                                  onChange={handleReceiptUpload}
+                            <div className="space-y-2">
+                              <p className="text-xs text-muted-foreground ml-1">
+                                Чек
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                <label
+                                  className={cn(
+                                    "flex items-center justify-center h-10 rounded-xl border border-input bg-background transition-all cursor-pointer group hover:border-primary hover:bg-accent/30",
+                                    isScanning &&
+                                      "pointer-events-none opacity-60"
+                                  )}
+                                >
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*,.eml"
+                                    onChange={handleReceiptUpload}
+                                    disabled={isScanning}
+                                  />
+                                  {isScanning ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                                      <span className="text-xs font-medium text-primary">
+                                        Сканируем...
+                                      </span>
+                                    </div>
+                                  ) : receipt ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <Check className="h-4 w-4 text-green-500" />
+                                      <span className="text-xs font-medium truncate text-green-600">
+                                        Загружено
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                                      <Camera className="h-4 w-4" />
+                                      <span className="text-xs font-medium">
+                                        Файл
+                                      </span>
+                                    </div>
+                                  )}
+                                </label>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setIsCameraOpen(true)}
                                   disabled={isScanning}
-                                />
-                                {isScanning ? (
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                                    <span className="text-xs font-medium text-primary">
-                                      Сканируем...
-                                    </span>
-                                  </div>
-                                ) : receipt ? (
-                                  <div className="flex items-center gap-2 text-primary">
-                                    <Check className="h-4 w-4" />
-                                    <span className="text-xs font-medium truncate max-w-25">
-                                      {receipt.name}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                                    <Camera className="h-4 w-4" />
-                                    <span className="text-xs font-medium">
-                                      Загрузить
-                                    </span>
-                                  </div>
-                                )}
-                              </label>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setIsCameraOpen(true)}
-                                disabled={isScanning}
-                                className="px-4"
-                              >
-                                <Camera className="h-4 w-4" />
-                              </Button>
+                                  className="h-10 rounded-xl"
+                                >
+                                  <Camera className="h-4 w-4 mr-2" />
+                                  <span className="text-xs font-medium">
+                                    Фото
+                                  </span>
+                                </Button>
+                              </div>
                             </div>
 
                             <Button
