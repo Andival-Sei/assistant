@@ -20,6 +20,24 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const startVideo = async (
+    videoElement: HTMLVideoElement,
+    mediaStream: MediaStream
+  ) => {
+    videoElement.srcObject = mediaStream;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    videoElement.setAttribute("playsinline", "true");
+    videoElement.setAttribute("webkit-playsinline", "true");
+
+    try {
+      await videoElement.play();
+    } catch (err) {
+      console.error("Play error:", err);
+      throw new Error("Не удалось запустить видеопоток");
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -67,11 +85,9 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         streamRef.current = mediaStream;
         setStream(mediaStream);
 
-        // Установить поток на видео элемент ТОЛЬКО если её ещё нет
-        if (videoElement.srcObject !== mediaStream && !videoElement.srcObject) {
-          videoElement.srcObject = mediaStream;
-          console.log("Stream set to video element");
-        }
+        // Всегда привязываем поток к видео и запускаем воспроизведение
+        await startVideo(videoElement, mediaStream);
+        console.log("Stream set to video element");
       } catch (err) {
         let errorMessage = "Не удалось получить доступ к камере";
 
