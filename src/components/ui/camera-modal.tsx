@@ -18,7 +18,66 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     "environment"
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const waitForVideoReady = (
+    videoElement: HTMLVideoElement,
+    timeoutMs = 4000
+  ): Promise<boolean> =>
+    new Promise((resolve) => {
+      const isReadyNow =
+        videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        videoElement.videoWidth > 0 &&
+        videoElement.videoHeight > 0;
+
+      if (isReadyNow) {
+        resolve(true);
+        return;
+      }
+
+      let resolved = false;
+      const startedAt = Date.now();
+
+      const cleanup = () => {
+        videoElement.removeEventListener("loadedmetadata", onReady);
+        videoElement.removeEventListener("loadeddata", onReady);
+        videoElement.removeEventListener("canplay", onReady);
+        videoElement.removeEventListener("playing", onReady);
+      };
+
+      const finish = (isReady: boolean) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve(isReady);
+      };
+
+      const onReady = () => {
+        const hasFrame =
+          videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          videoElement.videoWidth > 0 &&
+          videoElement.videoHeight > 0;
+        if (hasFrame) finish(true);
+      };
+
+      const tick = () => {
+        if (resolved) return;
+        onReady();
+        if (resolved) return;
+        if (Date.now() - startedAt > timeoutMs) {
+          finish(false);
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+
+      videoElement.addEventListener("loadedmetadata", onReady);
+      videoElement.addEventListener("loadeddata", onReady);
+      videoElement.addEventListener("canplay", onReady);
+      videoElement.addEventListener("playing", onReady);
+      requestAnimationFrame(tick);
+    });
 
   const startVideo = async (
     videoElement: HTMLVideoElement,
@@ -32,6 +91,10 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
     try {
       await videoElement.play();
+      const ready = await waitForVideoReady(videoElement);
+      if (!ready) {
+        throw new Error("Не удалось получить кадр с камеры");
+      }
     } catch (err) {
       console.error("Play error:", err);
       throw new Error("Не удалось запустить видеопоток");
@@ -47,6 +110,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     const initCamera = async () => {
       try {
         setIsLoading(true);
+        setIsVideoReady(false);
         setError(null);
 
         // Проверка доступности MediaDevices API
@@ -73,13 +137,44 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
           streamRef.current = null;
         }
 
-        // Запросить видео поток
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode,
+        // Пытаемся получить поток с несколькими наборами ограничений
+        const constraintsList: MediaStreamConstraints[] = [
+          {
+            video: {
+              facingMode: { ideal: facingMode },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
           },
-          audio: false,
-        });
+          {
+            video: {
+              facingMode,
+            },
+            audio: false,
+          },
+          {
+            video: true,
+            audio: false,
+          },
+        ];
+
+        let mediaStream: MediaStream | null = null;
+        let lastError: unknown = null;
+
+        for (const constraints of constraintsList) {
+          try {
+            mediaStream =
+              await navigator.mediaDevices.getUserMedia(constraints);
+            break;
+          } catch (constraintError) {
+            lastError = constraintError;
+          }
+        }
+
+        if (!mediaStream) {
+          throw lastError ?? new Error("Не удалось получить доступ к камере");
+        }
 
         // Установить поток в ref и state
         streamRef.current = mediaStream;
@@ -87,9 +182,12 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
         // Всегда привязываем поток к видео и запускаем воспроизведение
         await startVideo(videoElement, mediaStream);
+        setIsVideoReady(true);
+        setError(null);
         console.log("Stream set to video element");
       } catch (err) {
         let errorMessage = "Не удалось получить доступ к камере";
+        setIsVideoReady(false);
 
         if (err instanceof Error) {
           // Обработка разных типов ошибок
@@ -147,10 +245,11 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         videoElement.srcObject = null;
       }
       setStream(null);
+      setIsVideoReady(false);
     };
   }, [isOpen, facingMode]);
 
-  const handleCapture = () => {
+  const handleCapture = async () => {
     try {
       if (!videoRef.current || !canvasRef.current) {
         console.error("Missing refs");
@@ -168,7 +267,15 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
       });
 
       if (video.videoWidth === 0 || video.videoHeight === 0) {
-        setError("Видео ещё не загружено, подождите...");
+        const ready = await waitForVideoReady(video, 1500);
+        if (!ready || video.videoWidth === 0 || video.videoHeight === 0) {
+          setError("Видео ещё не загружено, подождите...");
+          return;
+        }
+      }
+
+      if (!isVideoReady) {
+        setError("Камера ещё подготавливается, попробуйте через секунду");
         return;
       }
 
@@ -216,9 +323,11 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     );
     if (videoRef.current) {
       try {
-        await videoRef.current.play();
-        console.log("Video started playing");
-        setIsLoading(false);
+        const ready = await waitForVideoReady(videoRef.current, 1200);
+        if (ready) {
+          setIsVideoReady(true);
+          setError(null);
+        }
       } catch (err) {
         console.error("Play error:", err);
         setError("Не удалось запустить видеопоток");
@@ -236,6 +345,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
       }
     }
     setStream(null);
+    setIsVideoReady(false);
     // Переключим режим и нативно перезагрузим камеру
     setFacingMode(facingMode === "user" ? "environment" : "user");
   };
@@ -249,6 +359,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
       videoRef.current.srcObject = null;
     }
     setStream(null);
+    setIsVideoReady(false);
     onClose();
   };
 
@@ -363,7 +474,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
           </Button>
           <Button
             onClick={handleCapture}
-            disabled={isLoading || !stream}
+            disabled={isLoading || !stream || !isVideoReady}
             className="flex-1"
             size="lg"
           >
