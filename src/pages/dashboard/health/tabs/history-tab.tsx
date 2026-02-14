@@ -11,6 +11,7 @@ function providerLabel(
   const provider = String(metadata.provider ?? "");
   if (provider === "google_fit") return "Google Fit";
   if (provider === "fitbit") return "Fitbit";
+  if (provider === "health_connect") return "Health Connect";
   if (provider) return provider;
   return "Интеграция";
 }

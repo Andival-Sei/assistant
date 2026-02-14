@@ -274,6 +274,13 @@ export function HealthPage() {
   const handleConnectProvider = async (item: HealthIntegrationView) => {
     setConnectingProvider(item.provider);
     try {
+      if (item.provider === "health_connect") {
+        toast.info(
+          "Health Connect пока в разработке. Для текущего релиза используйте Google Fit / Fitbit."
+        );
+        return;
+      }
+
       if (item.syncMethod === "oauth_api") {
         if (item.provider !== "fitbit" && item.provider !== "google_fit") {
           throw new Error(

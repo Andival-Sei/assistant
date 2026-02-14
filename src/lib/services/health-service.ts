@@ -11,6 +11,14 @@ import type {
 
 const HEALTH_INTEGRATION_CATALOG: HealthIntegrationCatalogItem[] = [
   {
+    provider: "health_connect",
+    name: "Health Connect",
+    shortDescription:
+      "В разработке: Android-bridge для синхронизации из Mi Fitness/Zepp Life",
+    syncMethod: "mobile_bridge",
+    badge: "Android",
+  },
+  {
     provider: "google_fit",
     name: "Google Fit",
     shortDescription:

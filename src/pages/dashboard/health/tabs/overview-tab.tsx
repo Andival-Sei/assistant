@@ -82,9 +82,9 @@ export function HealthOverviewTab({
         <div className="rounded-3xl border border-border/50 bg-card/40 p-8 backdrop-blur-xl">
           <h3 className="text-xl font-semibold">Пока нет данных о здоровье</h3>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Подключите Google Fit/Fitbit или добавьте первую запись вручную.
-            После этого на обзорной панели появятся персональные метрики и
-            тренды.
+            Подключите Health Connect / Google Fit / Fitbit или добавьте первую
+            запись вручную. После этого на обзорной панели появятся персональные
+            метрики и тренды.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link to="/dashboard/health/integrations">

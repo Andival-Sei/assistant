@@ -12,9 +12,13 @@ function statusLabel(status: string): string {
   return "Не подключено";
 }
 
+function isComingSoonProvider(provider: string): boolean {
+  return provider === "health_connect";
+}
+
 function methodLabel(method: string): string {
   if (method === "oauth_api") return "OAuth API";
-  if (method === "mobile_bridge") return "Mobile bridge";
+  if (method === "mobile_bridge") return "Mobile Bridge (Android)";
   return "Browser API";
 }
 
@@ -65,6 +69,7 @@ export function HealthIntegrationsTab({
                 disabled={
                   isRequestPending ||
                   connectingProvider === item.provider ||
+                  isComingSoonProvider(item.provider) ||
                   (item.syncMethod === "oauth_api" &&
                     item.provider !== "fitbit" &&
                     item.provider !== "google_fit")
@@ -81,13 +86,15 @@ export function HealthIntegrationsTab({
                 <LinkIcon className="mr-2 h-4 w-4" />
                 {connectingProvider === item.provider
                   ? "Подключаем..."
-                  : item.syncMethod === "oauth_api" &&
-                      item.provider !== "fitbit" &&
-                      item.provider !== "google_fit"
-                    ? "Скоро"
-                    : item.status === "connected"
-                      ? "Переподключить"
-                      : "Подключить"}
+                  : isComingSoonProvider(item.provider)
+                    ? "В разработке"
+                    : item.syncMethod === "oauth_api" &&
+                        item.provider !== "fitbit" &&
+                        item.provider !== "google_fit"
+                      ? "Скоро"
+                      : item.status === "connected"
+                        ? "Переподключить"
+                        : "Подключить"}
               </Button>
             </div>
           ))}

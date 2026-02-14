@@ -136,6 +136,38 @@ function getPointDurationHours(point: {
   return 0;
 }
 
+function getSleepStage(point: {
+  value?: Array<{
+    intVal?: number;
+    fpVal?: number;
+    mapVal?: Array<{
+      key?: string;
+      value?: { intVal?: number; fpVal?: number };
+    }>;
+  }>;
+}): number {
+  const first = point.value?.[0];
+  if (typeof first?.intVal === "number") return first.intVal;
+  if (typeof first?.fpVal === "number") return Math.round(first.fpVal);
+
+  const mapVals = first?.mapVal ?? [];
+  for (const mapVal of mapVals) {
+    const key = String(mapVal.key ?? "").toLowerCase();
+    const intVal = mapVal.value?.intVal;
+    const fpVal = mapVal.value?.fpVal;
+    if (
+      key.includes("stage") ||
+      key.includes("sleep_segment") ||
+      key.includes("sleep")
+    ) {
+      if (typeof intVal === "number") return intVal;
+      if (typeof fpVal === "number") return Math.round(fpVal);
+    }
+  }
+
+  return 2;
+}
+
 async function refreshGoogleToken(params: {
   clientId: string;
   clientSecret: string;
@@ -318,11 +350,13 @@ async function aggregateGoogleFitDay(
       }
 
       if (id.includes("sleep.segment")) {
-        const stage = Number(values[0] ?? 2);
+        const stage = getSleepStage(point);
         const durationHours = getPointDurationHours(point);
         if (durationHours <= 0) continue;
 
-        if (stage === 4) {
+        if (stage === 1 || stage === 3) {
+          sleepAwake += durationHours;
+        } else if (stage === 4) {
           sleepLight += durationHours;
           sleepTotal += durationHours;
         } else if (stage === 5) {
@@ -331,10 +365,9 @@ async function aggregateGoogleFitDay(
         } else if (stage === 6) {
           sleepRem += durationHours;
           sleepTotal += durationHours;
-        } else if (stage === 1 || stage === 3) {
-          sleepAwake += durationHours;
         } else {
-          sleepLight += durationHours;
+          // Stage 2 (generic sleep) or unknown stage:
+          // keep full sleep duration without forcing into light/deep/REM.
           sleepTotal += durationHours;
         }
         continue;
