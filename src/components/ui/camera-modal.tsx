@@ -23,10 +23,17 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   useEffect(() => {
     if (!isOpen) return;
 
+    const videoElement = videoRef.current;
+
     const initCamera = async () => {
       try {
         setIsLoading(true);
         setError(null);
+
+        // Остановить предыдущий поток
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        }
 
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -37,10 +44,18 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
           audio: false,
         });
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          setStream(mediaStream);
+        if (videoElement) {
+          videoElement.srcObject = mediaStream;
           streamRef.current = mediaStream;
+          setStream(mediaStream);
+
+          // Убедимся что видео запустилось
+          videoElement.onloadedmetadata = () => {
+            videoElement?.play().catch((e) => {
+              console.error("Play error:", e);
+              setError("Не удалось запустить видеопоток");
+            });
+          };
         }
       } catch (err) {
         const errorMessage =
@@ -62,6 +77,9 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         setStream(null);
         streamRef.current = null;
+      }
+      if (videoElement) {
+        videoElement.srcObject = null;
       }
     };
   }, [isOpen, facingMode]);
@@ -92,18 +110,28 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   };
 
   const handleToggleCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+    // Остановим текущий поток
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     }
+    setStream(null);
+    // Переключим режим и нативно перезагрузим камеру
     setFacingMode(facingMode === "user" ? "environment" : "user");
   };
 
   const handleClose = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setStream(null);
     onClose();
   };
 
@@ -154,8 +182,10 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
               <video
                 ref={videoRef}
                 autoPlay
+                muted
                 playsInline
-                className="w-full h-full object-cover"
+                disablePictureInPicture
+                className="w-full h-full object-cover bg-black"
                 style={{
                   transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
                 }}
