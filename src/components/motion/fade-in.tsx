@@ -28,6 +28,7 @@ export function FadeIn({
   const offset = directions[direction](distance);
   return (
     <motion.div
+      layout={props.layout as any}
       initial={{ opacity: 0, ...offset }}
       animate={{ opacity: 1, x: 0, y: 0 }}
       transition={{ duration, delay, ease: "easeOut" }}

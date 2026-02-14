@@ -22,12 +22,15 @@ import { parseISO } from "date-fns";
 
 function DateHeader({ date }: { date: string }) {
   return (
-    <div className="sticky top-0 z-10 pt-1 pb-2">
-      <div className="inline-flex items-center gap-2 rounded-full bg-muted/40 px-3 py-1.5 text-muted-foreground">
+    <motion.div
+      layout="position"
+      className="sticky top-0 z-10 pt-1 pb-2"
+    >
+      <div className="inline-flex items-center gap-2 rounded-full bg-muted/40 px-3 py-1.5 text-muted-foreground backdrop-blur-md">
         <Calendar className="h-3.5 w-3.5 shrink-0" />
         <span className="text-xs font-medium">{date}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -225,71 +228,120 @@ export function TransactionList({
     });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="px-4 py-4 space-y-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className="h-14 w-full animate-pulse rounded-xl bg-muted/50"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (!transactions?.length) {
-    return (
-      <div className="px-4 py-8">
-        <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
-          <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
-          <h3 className="mt-4 text-sm font-medium text-foreground">
-            Транзакций пока нет
-          </h3>
-        </div>
-      </div>
-    );
-  }
-
-  if (!filteredTransactions.length) {
-    return (
-      <div className="px-4 py-8">
-        <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
-          <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
-          <h3 className="mt-4 text-sm font-medium text-foreground">
-            Ничего не найдено
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Измените поиск или фильтры
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="px-4 py-4 space-y-5">
-      {Array.from(grouped.entries()).map(([dateKey, dateTransactions]) => (
-        <div key={dateKey} className="space-y-3">
-          <DateHeader date={dateKey} />
-          <div className="space-y-2.5">
-            {dateTransactions.map((tx, index) => (
-              <FadeIn
-                key={tx.id}
-                delay={index * 0.03}
-                direction="up"
-                distance={8}
-              >
-                <TransactionRow
-                  tx={tx}
-                  isExpanded={expandedIds.has(tx.id)}
-                  onToggleExpand={() => toggleExpand(tx.id)}
-                />
-              </FadeIn>
-            ))}
+    <AnimatePresence mode="wait">
+      {isLoading ? (
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="px-4 py-4 space-y-3"
+        >
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-14 w-full animate-pulse rounded-xl bg-muted/50"
+            />
+          ))}
+        </motion.div>
+      ) : !transactions?.length ? (
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="px-4 py-8"
+        >
+          <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
+            <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
+            <h3 className="mt-4 text-sm font-medium text-foreground">
+              Транзакций пока нет
+            </h3>
           </div>
-        </div>
-      ))}
-    </div>
+        </motion.div>
+      ) : !filteredTransactions.length ? (
+        <motion.div
+          key="not-found"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="px-4 py-8"
+        >
+          <div className="rounded-2xl border border-dashed border-border/50 p-12 text-center backdrop-blur-sm">
+            <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-20" />
+            <h3 className="mt-4 text-sm font-medium text-foreground">
+              Ничего не найдено
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Измените поиск или фильтры
+            </p>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="list"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="px-4 py-4 space-y-6"
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            {Array.from(grouped.entries()).map(([dateKey, dateTransactions]) => (
+              <motion.div
+                key={dateKey}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{
+                  duration: 0.2,
+                  layout: {
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 40,
+                  },
+                }}
+                className="space-y-3"
+              >
+                <DateHeader date={dateKey} />
+                <div className="space-y-2">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {dateTransactions.map((tx) => (
+                      <FadeIn
+                        key={tx.id}
+                        layout
+                        direction="none"
+                        distance={0}
+                        delay={0}
+                        exit={{
+                          opacity: 0,
+                          scale: 0.98,
+                          transition: { duration: 0.2 },
+                        }}
+                        transition={{
+                          layout: {
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 40,
+                          },
+                          opacity: { duration: 0.2 },
+                        }}
+                      >
+                        <TransactionRow
+                          tx={tx}
+                          isExpanded={expandedIds.has(tx.id)}
+                          onToggleExpand={() => toggleExpand(tx.id)}
+                        />
+                      </FadeIn>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
