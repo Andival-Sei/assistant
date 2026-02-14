@@ -193,7 +193,7 @@ export function FinancePage() {
                 key={tab.id}
                 to={tab.path}
                 className={cn(
-                  "pb-4 text-sm font-medium transition-colors relative whitespace-nowrap flex-shrink-0",
+                  "pb-4 text-sm font-medium transition-colors relative whitespace-nowrap shrink-0",
                   activeTab === tab.id
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -216,7 +216,7 @@ export function FinancePage() {
           </div>
         </div>
 
-        <div className="relative min-h-[400px]">
+        <div className="relative min-h-100">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
