@@ -138,10 +138,12 @@ export function AddTransactionForm({
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }, []);
 
-  const isEdgeAndroid = useMemo(() => {
+  const isMobileEdge = useMemo(() => {
     if (typeof navigator === "undefined") return false;
     const ua = navigator.userAgent || "";
-    return /Android/i.test(ua) && /EdgA/i.test(ua);
+    const isEdge = /EdgA|EdgiOS|Edg\//i.test(ua);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    return isEdge && isMobile;
   }, []);
 
   const isSplit = type === "expense" && items.length > 1;
@@ -286,7 +288,7 @@ export function AddTransactionForm({
   };
 
   const handlePhotoButtonClick = () => {
-    if (isEdgeAndroid) {
+    if (isMobileEdge) {
       nativeCameraInputRef.current?.click();
       return;
     }

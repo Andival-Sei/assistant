@@ -26,6 +26,10 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isEdgeDesktop =
+    typeof navigator !== "undefined" &&
+    /Edg\//i.test(navigator.userAgent) &&
+    !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   const waitForVideoReady = (
     videoElement: HTMLVideoElement,
@@ -182,6 +186,17 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
           });
         }
 
+        if (isEdgeDesktop && !selectedDeviceId && videoDevices.length > 0) {
+          constraintsList.push({
+            video: {
+              deviceId: { exact: videoDevices[0].deviceId },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          });
+        }
+
         constraintsList.push(
           {
             video: {
@@ -220,12 +235,19 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
         let mediaStream: MediaStream | null = null;
         let lastError: unknown = null;
-
         for (const constraints of constraintsList) {
           try {
-            mediaStream =
+            const candidateStream =
               await navigator.mediaDevices.getUserMedia(constraints);
-            break;
+            try {
+              await startVideo(videoElement, candidateStream);
+              mediaStream = candidateStream;
+              break;
+            } catch (playError) {
+              // Поток есть, но кадры не идут (чёрный экран) - пробуем следующий набор
+              candidateStream.getTracks().forEach((track) => track.stop());
+              lastError = playError;
+            }
           } catch (constraintError) {
             lastError = constraintError;
           }
@@ -238,9 +260,6 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         // Установить поток в ref и state
         streamRef.current = mediaStream;
         setStream(mediaStream);
-
-        // Всегда привязываем поток к видео и запускаем воспроизведение
-        await startVideo(videoElement, mediaStream);
 
         const activeTrack = mediaStream.getVideoTracks()[0];
         const activeDeviceId = activeTrack?.getSettings?.().deviceId;
