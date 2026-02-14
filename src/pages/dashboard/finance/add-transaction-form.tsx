@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { TransactionType, Category } from "@/types/finance";
 import { CategoryPicker } from "@/components/finance/category-picker";
+import { CameraModal } from "@/components/ui/camera-modal";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
@@ -127,6 +128,7 @@ export function AddTransactionForm({
   const [date, setDate] = useState<Date>(new Date());
   const [receipt, setReceipt] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const isSplit = type === "expense" && items.length > 1;
   const totalAmount = items.reduce(
@@ -248,6 +250,68 @@ export function AddTransactionForm({
       } finally {
         setIsScanning(false);
       }
+    }
+  };
+
+  const handleCameraCapture = async (blob: Blob) => {
+    // Преобразуем blob в File для обработки
+    const file = new File([blob], "receipt.jpg", { type: "image/jpeg" });
+    setReceipt(file);
+    setIsScanning(true);
+    try {
+      const result = await financeService.processReceipt(file);
+
+      // Небольшая задержка для красоты перехода
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      if (result.items && result.items.length > 0) {
+        const newItems = result.items.map(
+          (item: {
+            name: string;
+            amount: number;
+            category_suggestion: string | null;
+          }) => {
+            const suggestedCategory = categories?.find(
+              (c) =>
+                c.name.toLowerCase() ===
+                item.category_suggestion?.toLowerCase()
+            );
+            return {
+              id: crypto.randomUUID(),
+              amount: String(item.amount),
+              category: suggestedCategory || null,
+              description: item.name,
+            };
+          }
+        );
+        setItems(newItems);
+      } else {
+        const suggestedCategory = categories?.find(
+          (c) =>
+            c.name.toLowerCase() === result.category_suggestion?.toLowerCase()
+        );
+        setItems([
+          {
+            id: crypto.randomUUID(),
+            amount: String(result.total_amount || 0),
+            category: suggestedCategory || null,
+            description: result.merchant || "Чек",
+          },
+        ]);
+      }
+
+      if (result.date) {
+        setDate(new Date(result.date));
+      }
+      setType("expense");
+      toast.success("Чек успешно распознан ✨");
+    } catch (error) {
+      console.error("Scanning failed:", error);
+      toast.error(
+        `Ошибка при сканировании: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`
+      );
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -409,7 +473,7 @@ export function AddTransactionForm({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 16 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
-              className="w-full max-w-lg max-h-[80vh] min-h-[560px] bg-card border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col relative"
+              className="w-full mx-4 max-w-lg max-h-[85vh] sm:max-h-[80vh] sm:mx-0 min-h-[500px] sm:min-h-[560px] bg-card border border-border rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden flex flex-col relative"
             >
               <ErrorBoundary>
                 <div className="flex items-center justify-between p-4 border-b bg-muted/30 shrink-0 z-10 relative">
@@ -818,7 +882,7 @@ export function AddTransactionForm({
                           </div>
 
                           <div className="p-4 border-t bg-muted/20 space-y-4 shrink-0">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <CustomSelect
                                 label={type === "transfer" ? "Откуда" : "Счет"}
                                 options={walletOptions}
@@ -880,11 +944,21 @@ export function AddTransactionForm({
                                   <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                                     <Camera className="h-4 w-4" />
                                     <span className="text-xs font-medium">
-                                      Скан чека
+                                      Загрузить
                                     </span>
                                   </div>
                                 )}
                               </label>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsCameraOpen(true)}
+                                disabled={isScanning}
+                                className="px-4"
+                              >
+                                <Camera className="h-4 w-4" />
+                              </Button>
                             </div>
 
                             <Button
@@ -908,6 +982,11 @@ export function AddTransactionForm({
           </div>
         )}
       </AnimatePresence>
+      <CameraModal
+        isOpen={isCameraOpen}
+        onCapture={handleCameraCapture}
+        onClose={() => setIsCameraOpen(false)}
+      />
     </>
   );
 }
