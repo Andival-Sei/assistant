@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Camera, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
@@ -12,11 +12,17 @@ interface CameraModalProps {
 export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">(
     "environment"
   );
+  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>(
+    []
+  );
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +107,32 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     }
   };
 
+  const stopCurrentStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        console.log("Track stopped:", track.kind);
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setStream(null);
+    setIsVideoReady(false);
+  };
+
+  const getVideoDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((d) => d.kind === "videoinput");
+      setAvailableDevices(videoDevices);
+      return videoDevices;
+    } catch {
+      return [] as MediaDeviceInfo[];
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -132,13 +164,25 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         }
 
         // Остановить предыдущий поток
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
+        stopCurrentStream();
+
+        const videoDevices = await getVideoDevices();
 
         // Пытаемся получить поток с несколькими наборами ограничений
-        const constraintsList: MediaStreamConstraints[] = [
+        const constraintsList: MediaStreamConstraints[] = [];
+
+        if (selectedDeviceId) {
+          constraintsList.push({
+            video: {
+              deviceId: { exact: selectedDeviceId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
+          });
+        }
+
+        constraintsList.push(
           {
             video: {
               facingMode: { ideal: facingMode },
@@ -156,8 +200,23 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
           {
             video: true,
             audio: false,
-          },
-        ];
+          }
+        );
+
+        if (!selectedDeviceId && videoDevices.length > 0) {
+          // На Android часть браузеров выбирает "служебную" камеру; подбираем явный rear device
+          const rearDevice = videoDevices.find((d) =>
+            /back|rear|environment|world|зад/i.test(d.label)
+          );
+          if (rearDevice?.deviceId) {
+            constraintsList.unshift({
+              video: {
+                deviceId: { exact: rearDevice.deviceId },
+              },
+              audio: false,
+            });
+          }
+        }
 
         let mediaStream: MediaStream | null = null;
         let lastError: unknown = null;
@@ -182,6 +241,14 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
         // Всегда привязываем поток к видео и запускаем воспроизведение
         await startVideo(videoElement, mediaStream);
+
+        const activeTrack = mediaStream.getVideoTracks()[0];
+        const activeDeviceId = activeTrack?.getSettings?.().deviceId;
+        if (activeDeviceId && !selectedDeviceId) {
+          setSelectedDeviceId(activeDeviceId);
+        }
+
+        await getVideoDevices();
         setIsVideoReady(true);
         setError(null);
         console.log("Stream set to video element");
@@ -234,20 +301,9 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
     // Очистка при закрытии
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => {
-          track.stop();
-          console.log("Track stopped:", track.kind);
-        });
-        streamRef.current = null;
-      }
-      if (videoElement) {
-        videoElement.srcObject = null;
-      }
-      setStream(null);
-      setIsVideoReady(false);
+      stopCurrentStream();
     };
-  }, [isOpen, facingMode]);
+  }, [isOpen, facingMode, selectedDeviceId, retryToken]);
 
   const handleCapture = async () => {
     try {
@@ -269,6 +325,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
       if (video.videoWidth === 0 || video.videoHeight === 0) {
         const ready = await waitForVideoReady(video, 1500);
         if (!ready || video.videoWidth === 0 || video.videoHeight === 0) {
+          setIsVideoReady(false);
           setError("Видео ещё не загружено, подождите...");
           return;
         }
@@ -336,30 +393,46 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   };
 
   const handleToggleCamera = () => {
-    // Остановим текущий поток
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+    setError(null);
+
+    if (availableDevices.length > 1) {
+      const currentIndex = availableDevices.findIndex(
+        (d) => d.deviceId === selectedDeviceId
+      );
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + 1) % availableDevices.length
+          : 0;
+      setSelectedDeviceId(availableDevices[nextIndex].deviceId);
+      setRetryToken((prev) => prev + 1);
+      return;
     }
-    setStream(null);
-    setIsVideoReady(false);
-    // Переключим режим и нативно перезагрузим камеру
+
+    // Фолбэк, если браузер не отдает список устройств
     setFacingMode(facingMode === "user" ? "environment" : "user");
+    setRetryToken((prev) => prev + 1);
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setIsVideoReady(false);
+    setRetryToken((prev) => prev + 1);
+  };
+
+  const handleNativeCameraOpen = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleNativeCapture = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    onCapture(file);
+    handleClose();
+    event.target.value = "";
   };
 
   const handleClose = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setStream(null);
-    setIsVideoReady(false);
+    stopCurrentStream();
     onClose();
   };
 
@@ -427,9 +500,16 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleToggleCamera}
+                  onClick={handleRetry}
                 >
                   Попробовать снова
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNativeCameraOpen}
+                >
+                  Системная камера
                 </Button>
               </div>
             </div>
@@ -462,6 +542,14 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
         {/* Контролы */}
         <div className="p-4 border-t bg-muted/20 flex gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture={facingMode === "environment" ? "environment" : "user"}
+            className="hidden"
+            onChange={handleNativeCapture}
+          />
           <Button
             type="button"
             variant="outline"
