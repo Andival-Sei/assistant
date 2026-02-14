@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
+import { supabaseClient } from "@/lib/db/supabase-client";
 
 // Состояние авторизации приложения
 interface AuthState {
@@ -52,7 +53,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
     })),
 
   logout: async () => {
-    const { supabaseClient } = await import("@/lib/db/supabase-client");
     await supabaseClient.auth.signOut();
     set({ status: "unauthenticated", user: null, session: null });
   },

@@ -1,6 +1,7 @@
 export type HealthMetricSource = "manual" | "integration" | "browser";
 
 export type HealthIntegrationProvider =
+  | "google_fit"
   | "apple_health"
   | "health_connect"
   | "fitbit"
@@ -24,11 +25,19 @@ export interface HealthMetricEntry {
   source: HealthMetricSource;
   steps: number | null;
   sleep_hours: number | null;
+  sleep_deep_hours: number | null;
+  sleep_light_hours: number | null;
+  sleep_rem_hours: number | null;
+  sleep_awake_hours: number | null;
   water_ml: number | null;
   weight_kg: number | null;
   resting_heart_rate: number | null;
   systolic_bp: number | null;
   diastolic_bp: number | null;
+  oxygen_saturation_pct: number | null;
+  body_temperature_c: number | null;
+  blood_glucose_mmol_l: number | null;
+  reproductive_events_count: number | null;
   calories: number | null;
   mood_score: number | null;
   note: string | null;
@@ -42,11 +51,19 @@ export interface HealthMetricEntryInput {
   source?: HealthMetricSource;
   steps?: number | null;
   sleep_hours?: number | null;
+  sleep_deep_hours?: number | null;
+  sleep_light_hours?: number | null;
+  sleep_rem_hours?: number | null;
+  sleep_awake_hours?: number | null;
   water_ml?: number | null;
   weight_kg?: number | null;
   resting_heart_rate?: number | null;
   systolic_bp?: number | null;
   diastolic_bp?: number | null;
+  oxygen_saturation_pct?: number | null;
+  body_temperature_c?: number | null;
+  blood_glucose_mmol_l?: number | null;
+  reproductive_events_count?: number | null;
   calories?: number | null;
   mood_score?: number | null;
   note?: string | null;

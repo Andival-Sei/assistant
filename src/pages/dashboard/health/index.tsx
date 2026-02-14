@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FadeIn } from "@/components/motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { healthService } from "@/lib/services/health-service";
@@ -6,44 +6,45 @@ import type {
   HealthMetricEntryInput,
   HealthIntegrationView,
 } from "@/types/health";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import {
-  Activity,
-  HeartPulse,
-  Moon,
-  Droplets,
-  Footprints,
-  Link as LinkIcon,
-  Smartphone,
-  Globe,
-  Sparkles,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
+import { AnimatePresence, motion } from "framer-motion";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import type { HealthFormState, WeeklyStats } from "./health-types";
+import { HealthOverviewTab } from "./tabs/overview-tab";
+import { HealthIntegrationsTab } from "./tabs/integrations-tab";
+import { HealthManualTab } from "./tabs/manual-tab";
+import { HealthHistoryTab } from "./tabs/history-tab";
+import { HealthAnalyticsTab } from "./tabs/analytics-tab";
 
-type FormState = {
-  weight_kg: string;
-  steps: string;
-  sleep_hours: string;
-  water_ml: string;
-  resting_heart_rate: string;
-  systolic_bp: string;
-  diastolic_bp: string;
-  mood_score: string;
-  note: string;
-};
+const tabs = [
+  { id: "overview", label: "Обзор", path: "/dashboard/health" },
+  { id: "manual", label: "Журнал", path: "/dashboard/health/manual" },
+  {
+    id: "integrations",
+    label: "Интеграции",
+    path: "/dashboard/health/integrations",
+  },
+  { id: "analytics", label: "Аналитика", path: "/dashboard/health/analytics" },
+  { id: "history", label: "История", path: "/dashboard/health/history" },
+];
 
-const initialFormState: FormState = {
+const initialFormState: HealthFormState = {
   weight_kg: "",
   steps: "",
   sleep_hours: "",
+  sleep_deep_hours: "",
+  sleep_light_hours: "",
+  sleep_rem_hours: "",
+  sleep_awake_hours: "",
   water_ml: "",
   resting_heart_rate: "",
   systolic_bp: "",
   diastolic_bp: "",
+  oxygen_saturation_pct: "",
+  body_temperature_c: "",
+  blood_glucose_mmol_l: "",
+  reproductive_events_count: "",
   mood_score: "",
   note: "",
 };
@@ -54,31 +55,25 @@ function parseNumber(value: string): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function statusLabel(status: HealthIntegrationView["status"]): string {
-  if (status === "connected") return "Подключено";
-  if (status === "pending") return "Ожидает подключения";
-  if (status === "error") return "Ошибка";
-  if (status === "revoked") return "Отключено";
-  return "Не подключено";
-}
-
-function methodLabel(method: HealthIntegrationView["syncMethod"]): string {
-  if (method === "oauth_api") return "OAuth API";
-  if (method === "mobile_bridge") return "Mobile bridge";
-  return "Browser API";
-}
-
 export function HealthPage() {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<FormState>(initialFormState);
+  const location = useLocation();
+  const handledOAuthRef = useRef<string | null>(null);
+  const [form, setForm] = useState<HealthFormState>(initialFormState);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(
     null
   );
   const today = new Date().toISOString().slice(0, 10);
 
+  const activeTab = useMemo(() => {
+    const path = location.pathname;
+    const matchedTab = [...tabs].reverse().find((t) => path.startsWith(t.path));
+    return matchedTab?.id || "overview";
+  }, [location.pathname]);
+
   const { data: metrics = [], isLoading: metricsLoading } = useQuery({
     queryKey: ["health", "metrics"],
-    queryFn: () => healthService.getMetrics(60),
+    queryFn: () => healthService.getMetrics(90),
   });
 
   const { data: integrations = [] } = useQuery({
@@ -109,15 +104,64 @@ export function HealthPage() {
     },
   });
 
+  const syncFitbitMutation = useMutation({
+    mutationFn: (days?: number) => healthService.syncFitbit(days),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["health", "metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "integrations"] });
+      if (result.rate_limited) {
+        toast.info(
+          `Частичный импорт: ${result.imported_entries}. Лимит Fitbit, повторите позже.`
+        );
+        return;
+      }
+      toast.success(
+        `Синхронизация завершена. Импорт: ${result.imported_entries}`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось синхронизировать Fitbit");
+    },
+  });
+
+  const syncGoogleFitMutation = useMutation({
+    mutationFn: (days?: number) => healthService.syncGoogleFit(days),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["health", "metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "integrations"] });
+      if (result.rate_limited) {
+        toast.info(
+          `Частичный импорт: ${result.imported_entries}. Лимит Google, повторите позже.`
+        );
+        return;
+      }
+      toast.success(
+        `Google Fit синхронизирован. Импорт: ${result.imported_entries}`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось синхронизировать Google Fit");
+    },
+  });
+
   const latestByDay = useMemo(() => {
     const map = new Map<string, (typeof metrics)[number]>();
     metrics.forEach((item) => {
-      if (!map.has(item.recorded_for)) map.set(item.recorded_for, item);
+      const existing = map.get(item.recorded_for);
+      if (!existing) {
+        map.set(item.recorded_for, item);
+        return;
+      }
+
+      // Prefer manual entry on the same day so user edits are visible.
+      if (item.source === "manual" && existing.source !== "manual") {
+        map.set(item.recorded_for, item);
+      }
     });
     return Array.from(map.values());
   }, [metrics]);
 
-  const weeklyStats = useMemo(() => {
+  const weeklyStats = useMemo<WeeklyStats>(() => {
     const lastWeek = latestByDay.slice(0, 7);
     const avg = (values: Array<number | null | undefined>) => {
       const numbers = values.filter((v): v is number => typeof v === "number");
@@ -130,6 +174,8 @@ export function HealthPage() {
       avgSleep: avg(lastWeek.map((m) => m.sleep_hours)),
       avgPulse: avg(lastWeek.map((m) => m.resting_heart_rate)),
       avgWater: avg(lastWeek.map((m) => m.water_ml)),
+      avgSpo2: avg(lastWeek.map((m) => m.oxygen_saturation_pct)),
+      avgTemperature: avg(lastWeek.map((m) => m.body_temperature_c)),
     };
   }, [latestByDay]);
 
@@ -138,16 +184,25 @@ export function HealthPage() {
     [latestByDay, today]
   );
 
-  const browserCapabilities = useMemo(() => {
-    if (typeof window === "undefined") {
-      return { bluetooth: false, usb: false, geolocation: false };
-    }
-    return {
-      bluetooth: "bluetooth" in navigator,
-      usb: "usb" in navigator,
-      geolocation: "geolocation" in navigator,
-    };
-  }, []);
+  const fitbitIntegration = useMemo(
+    () => integrations.find((item) => item.provider === "fitbit"),
+    [integrations]
+  );
+  const googleFitIntegration = useMemo(
+    () => integrations.find((item) => item.provider === "google_fit"),
+    [integrations]
+  );
+  const connectedSyncIntegration = useMemo(() => {
+    const connected = integrations.filter(
+      (item) => item.status === "connected"
+    );
+    if (connected.length === 0) return undefined;
+    return connected.slice().sort((a, b) => {
+      const aTime = a.last_sync_at ? new Date(a.last_sync_at).getTime() : 0;
+      const bTime = b.last_sync_at ? new Date(b.last_sync_at).getTime() : 0;
+      return bTime - aTime;
+    })[0];
+  }, [integrations]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -156,20 +211,40 @@ export function HealthPage() {
     const reason = url.searchParams.get("reason");
     if (!oauthStatus) return;
 
-    if (oauthStatus === "success") {
-      toast.success(`Интеграция ${provider || ""} успешно подключена`);
-      queryClient.invalidateQueries({ queryKey: ["health", "integrations"] });
-    } else if (oauthStatus === "error") {
-      toast.error(
-        `Не удалось подключить ${provider || "интеграцию"}${reason ? ` (${reason})` : ""}`
-      );
-    }
+    const oauthKey = `${oauthStatus}:${provider ?? ""}:${reason ?? ""}`;
+    if (handledOAuthRef.current === oauthKey) return;
+    handledOAuthRef.current = oauthKey;
 
     url.searchParams.delete("health_oauth");
     url.searchParams.delete("provider");
     url.searchParams.delete("reason");
     window.history.replaceState({}, "", url.toString());
-  }, [queryClient]);
+
+    if (oauthStatus === "success") {
+      toast.success(`Интеграция ${provider || ""} успешно подключена`);
+      queryClient.invalidateQueries({ queryKey: ["health", "integrations"] });
+
+      if (provider === "google_fit") {
+        void syncGoogleFitMutation.mutateAsync(undefined);
+      } else {
+        void syncFitbitMutation.mutateAsync(undefined);
+      }
+    } else if (oauthStatus === "error") {
+      toast.error(
+        `Не удалось подключить ${provider || "интеграцию"}${reason ? ` (${reason})` : ""}`
+      );
+    }
+  }, [queryClient, syncFitbitMutation, syncGoogleFitMutation]);
+
+  const handleSyncConnected = (days?: number) => {
+    if (googleFitIntegration?.status === "connected") {
+      syncGoogleFitMutation.mutate(days);
+      return;
+    }
+    if (fitbitIntegration?.status === "connected") {
+      syncFitbitMutation.mutate(days);
+    }
+  };
 
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
@@ -179,10 +254,18 @@ export function HealthPage() {
       weight_kg: parseNumber(form.weight_kg),
       steps: parseNumber(form.steps),
       sleep_hours: parseNumber(form.sleep_hours),
+      sleep_deep_hours: parseNumber(form.sleep_deep_hours),
+      sleep_light_hours: parseNumber(form.sleep_light_hours),
+      sleep_rem_hours: parseNumber(form.sleep_rem_hours),
+      sleep_awake_hours: parseNumber(form.sleep_awake_hours),
       water_ml: parseNumber(form.water_ml),
       resting_heart_rate: parseNumber(form.resting_heart_rate),
       systolic_bp: parseNumber(form.systolic_bp),
       diastolic_bp: parseNumber(form.diastolic_bp),
+      oxygen_saturation_pct: parseNumber(form.oxygen_saturation_pct),
+      body_temperature_c: parseNumber(form.body_temperature_c),
+      blood_glucose_mmol_l: parseNumber(form.blood_glucose_mmol_l),
+      reproductive_events_count: parseNumber(form.reproductive_events_count),
       mood_score: parseNumber(form.mood_score),
       note: form.note || null,
     });
@@ -192,7 +275,7 @@ export function HealthPage() {
     setConnectingProvider(item.provider);
     try {
       if (item.syncMethod === "oauth_api") {
-        if (item.provider !== "fitbit") {
+        if (item.provider !== "fitbit" && item.provider !== "google_fit") {
           throw new Error(
             "Этот провайдер будет добавлен следующим этапом. Сейчас доступен Fitbit."
           );
@@ -222,342 +305,123 @@ export function HealthPage() {
               Здоровье
             </h1>
             <p className="mt-2 max-w-2xl text-muted-foreground">
-              Центр здоровья с гибридной стратегией: ручной ввод сейчас, плюс
-              подключение wearables и мобильных источников через интеграции.
+              Автосинхронизация с интеграциями + ручной журнал и история метрик.
             </p>
           </div>
           <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-300">
             {metricsLoading
               ? "Обновляем данные..."
-              : `Записей за 60 дней: ${metrics.length}`}
+              : `Записей за 90 дней: ${metrics.length}`}
           </div>
         </div>
       </FadeIn>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <FadeIn delay={0.05} direction="up" distance={12}>
-          <div className="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="rounded-xl bg-primary/10 p-2 text-primary">
-                <Footprints className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Шаги / 7д
-              </span>
-            </div>
-            <div className="text-2xl font-bold">
-              {weeklyStats.avgSteps
-                ? Math.round(weeklyStats.avgSteps).toLocaleString("ru-RU")
-                : "—"}
-            </div>
-          </div>
-        </FadeIn>
-
-        <FadeIn delay={0.1} direction="up" distance={12}>
-          <div className="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="rounded-xl bg-blue-500/10 p-2 text-blue-600">
-                <Moon className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Сон / 7д
-              </span>
-            </div>
-            <div className="text-2xl font-bold">
-              {weeklyStats.avgSleep
-                ? `${weeklyStats.avgSleep.toFixed(1)} ч`
-                : "—"}
-            </div>
-          </div>
-        </FadeIn>
-
-        <FadeIn delay={0.15} direction="up" distance={12}>
-          <div className="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="rounded-xl bg-rose-500/10 p-2 text-rose-600">
-                <HeartPulse className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Пульс / 7д
-              </span>
-            </div>
-            <div className="text-2xl font-bold">
-              {weeklyStats.avgPulse
-                ? `${Math.round(weeklyStats.avgPulse)} уд/мин`
-                : "—"}
-            </div>
-          </div>
-        </FadeIn>
-
-        <FadeIn delay={0.2} direction="up" distance={12}>
-          <div className="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="rounded-xl bg-cyan-500/10 p-2 text-cyan-600">
-                <Droplets className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Вода / 7д
-              </span>
-            </div>
-            <div className="text-2xl font-bold">
-              {weeklyStats.avgWater
-                ? `${Math.round(weeklyStats.avgWater)} мл`
-                : "—"}
-            </div>
-          </div>
-        </FadeIn>
+      <div className="border-b border-border">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide sm:gap-8">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.id}
+              to={tab.path}
+              className={cn(
+                "pb-4 text-sm font-medium transition-colors relative whitespace-nowrap shrink-0",
+                activeTab === tab.id
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div
+                  layoutId="healthActiveTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                  transition={{ type: "spring", stiffness: 360, damping: 30 }}
+                />
+              )}
+            </Link>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <FadeIn delay={0.25} direction="up" distance={14}>
-          <div className="rounded-3xl border border-border/50 bg-card/40 p-6 backdrop-blur-xl shadow-sm">
-            <div className="mb-5 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-bold">Интеграции</h2>
-                <p className="text-sm text-muted-foreground">
-                  Один экран для подключения носимых устройств и health APIs.
-                </p>
-              </div>
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary">
-                MVP
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {integrations.map((item) => (
-                // OAuth в этом этапе включён только для Fitbit
-                <div
-                  key={item.provider}
-                  className="flex flex-col gap-3 rounded-2xl border border-border/40 bg-background/40 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{item.name}</span>
-                      <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
-                        {item.badge}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {item.shortDescription}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {methodLabel(item.syncMethod)} •{" "}
-                      {statusLabel(item.status)}
-                    </p>
-                  </div>
-                  <Button
-                    variant={
-                      item.status === "connected" ? "outline" : "default"
-                    }
-                    size="sm"
-                    disabled={
-                      requestIntegrationMutation.isPending ||
-                      connectingProvider === item.provider ||
-                      (item.syncMethod === "oauth_api" &&
-                        item.provider !== "fitbit")
-                    }
-                    onClick={() =>
-                      void handleConnectProvider(item).catch((error: Error) => {
-                        toast.error(
-                          error.message || "Не удалось запустить интеграцию"
-                        );
-                      })
-                    }
-                    className="sm:min-w-36"
-                  >
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    {connectingProvider === item.provider
-                      ? "Подключаем..."
-                      : item.syncMethod === "oauth_api" &&
-                          item.provider !== "fitbit"
-                        ? "Скоро"
-                        : item.status === "connected"
-                          ? "Переподключить"
-                          : "Подключить"}
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-dashed border-border bg-background/30 p-4 text-xs text-muted-foreground">
-              Для браузера напрямую доступны только ограниченные сенсоры. Полный
-              сбор health-данных делается через OAuth API или мобильный bridge.
-            </div>
-          </div>
-        </FadeIn>
-
-        <FadeIn delay={0.3} direction="up" distance={14}>
-          <form
-            onSubmit={handleSave}
-            className="rounded-3xl border border-border/50 bg-card/40 p-6 backdrop-blur-xl shadow-sm"
+      <div className="relative min-h-100">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="w-full"
           >
-            <div className="mb-5 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-bold">Ручной ввод</h2>
-                <p className="text-sm text-muted-foreground">
-                  Заполните значения за сегодня: мы сохраним и обновим
-                  аналитику.
-                </p>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {format(new Date(today), "d MMMM yyyy", { locale: ru })}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                placeholder="Вес, кг"
-                value={form.weight_kg}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, weight_kg: e.target.value }))
+            <Routes location={location}>
+              <Route
+                index
+                element={
+                  <HealthOverviewTab
+                    metricsCount={metrics.length}
+                    weeklyStats={weeklyStats}
+                    connectedSyncIntegration={connectedSyncIntegration}
+                    integrations={integrations}
+                    todayEntry={todayEntry}
+                    onSyncFitbit={handleSyncConnected}
+                    isSyncPending={
+                      syncFitbitMutation.isPending ||
+                      syncGoogleFitMutation.isPending
+                    }
+                  />
                 }
               />
-              <Input
-                placeholder="Шаги"
-                value={form.steps}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, steps: e.target.value }))
+              <Route
+                path="overview"
+                element={<Navigate to="/dashboard/health" replace />}
+              />
+              <Route
+                path="manual"
+                element={
+                  <HealthManualTab
+                    form={form}
+                    setForm={setForm}
+                    onSave={handleSave}
+                    isSaving={saveMetricMutation.isPending}
+                    today={today}
+                  />
                 }
               />
-              <Input
-                placeholder="Сон, часы"
-                value={form.sleep_hours}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, sleep_hours: e.target.value }))
+              <Route
+                path="integrations"
+                element={
+                  <HealthIntegrationsTab
+                    integrations={integrations}
+                    connectedSyncIntegration={connectedSyncIntegration}
+                    connectingProvider={connectingProvider}
+                    isRequestPending={requestIntegrationMutation.isPending}
+                    onConnectProvider={handleConnectProvider}
+                  />
                 }
               />
-              <Input
-                placeholder="Вода, мл"
-                value={form.water_ml}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, water_ml: e.target.value }))
+              <Route
+                path="analytics"
+                element={
+                  <HealthAnalyticsTab
+                    entries={latestByDay}
+                    integrations={integrations}
+                    connectedSyncIntegration={connectedSyncIntegration}
+                  />
                 }
               />
-              <Input
-                placeholder="Пульс покоя"
-                value={form.resting_heart_rate}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    resting_heart_rate: e.target.value,
-                  }))
+              <Route
+                path="history"
+                element={
+                  <HealthHistoryTab
+                    entries={latestByDay}
+                    integrations={integrations}
+                    connectedSyncIntegration={connectedSyncIntegration}
+                  />
                 }
               />
-              <Input
-                placeholder="Настроение 1-10"
-                value={form.mood_score}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, mood_score: e.target.value }))
-                }
-              />
-              <Input
-                placeholder="Систолическое"
-                value={form.systolic_bp}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, systolic_bp: e.target.value }))
-                }
-              />
-              <Input
-                placeholder="Диастолическое"
-                value={form.diastolic_bp}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, diastolic_bp: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="mt-3">
-              <Input
-                placeholder="Комментарий (необязательно)"
-                value={form.note}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, note: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Button type="submit" disabled={saveMetricMutation.isPending}>
-                <Activity className="mr-2 h-4 w-4" />
-                {saveMetricMutation.isPending
-                  ? "Сохраняем..."
-                  : "Сохранить за сегодня"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setForm(initialFormState)}
-              >
-                Сбросить
-              </Button>
-            </div>
-          </form>
-        </FadeIn>
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
       </div>
-
-      <FadeIn delay={0.35} direction="up" distance={14}>
-        <div className="rounded-3xl border border-border/50 bg-card/40 p-6 backdrop-blur-xl">
-          <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold">Текущее состояние интеграции</h3>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border/40 bg-background/40 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                <Smartphone className="h-4 w-4 text-primary" />
-                Mobile Bridge
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Apple Health и Health Connect подключаются через мобильное
-                приложение.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/40 bg-background/40 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                <Globe className="h-4 w-4 text-primary" />
-                OAuth API
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Fitbit, Garmin, Oura и другие устройства связываются через
-                backend callback.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/40 bg-background/40 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                <Activity className="h-4 w-4 text-primary" />
-                Browser Capabilities
-              </div>
-              <div className="flex flex-wrap gap-2 text-[11px]">
-                {Object.entries(browserCapabilities).map(([key, value]) => (
-                  <span
-                    key={key}
-                    className={cn(
-                      "rounded-full px-2 py-1",
-                      value
-                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {key}: {value ? "yes" : "no"}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {todayEntry ? (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Последняя запись за сегодня: {todayEntry.weight_kg ?? "—"} кг,{" "}
-              {todayEntry.steps?.toLocaleString("ru-RU") ?? "—"} шагов,{" "}
-              {todayEntry.sleep_hours ?? "—"} ч сна.
-            </p>
-          ) : (
-            <p className="mt-4 text-xs text-muted-foreground">
-              За сегодня записи пока нет. Добавьте первую запись вручную.
-            </p>
-          )}
-        </div>
-      </FadeIn>
     </div>
   );
 }

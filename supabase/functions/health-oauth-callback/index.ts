@@ -77,20 +77,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (providerError || !code) {
-      await admin
-        .from("health_integrations")
-        .upsert(
-          {
-            user_id: row.user_id,
-            provider: row.provider,
-            status: "error",
-            metadata: {
-              oauth_error: providerError || "missing_code",
-              failed_at: new Date().toISOString(),
-            },
+      await admin.from("health_integrations").upsert(
+        {
+          user_id: row.user_id,
+          provider: row.provider,
+          status: "error",
+          metadata: {
+            oauth_error: providerError || "missing_code",
+            failed_at: new Date().toISOString(),
           },
-          { onConflict: "user_id,provider" }
-        );
+        },
+        { onConflict: "user_id,provider" }
+      );
 
       await admin
         .from("health_oauth_states")
@@ -105,7 +103,7 @@ Deno.serve(async (req: Request) => {
       return Response.redirect(redirectTo, 302);
     }
 
-    if (row.provider !== "fitbit") {
+    if (row.provider !== "fitbit" && row.provider !== "google_fit") {
       const redirectTo = buildRedirect(redirectBase, {
         health_oauth: "error",
         provider: row.provider,
@@ -114,51 +112,86 @@ Deno.serve(async (req: Request) => {
       return Response.redirect(redirectTo, 302);
     }
 
-    const fitbitClientId = Deno.env.get("FITBIT_CLIENT_ID");
-    const fitbitClientSecret = Deno.env.get("FITBIT_CLIENT_SECRET");
-    const fitbitRedirectUri = Deno.env.get("FITBIT_REDIRECT_URI");
+    let tokenResponse: Response;
+    let tokenJson: Record<string, unknown>;
+    let providerKey = row.provider;
 
-    if (!fitbitClientId || !fitbitClientSecret || !fitbitRedirectUri) {
-      const redirectTo = buildRedirect(redirectBase, {
-        health_oauth: "error",
-        provider: "fitbit",
-        reason: "missing_fitbit_env",
+    if (row.provider === "fitbit") {
+      const fitbitClientId = Deno.env.get("FITBIT_CLIENT_ID");
+      const fitbitClientSecret = Deno.env.get("FITBIT_CLIENT_SECRET");
+      const fitbitRedirectUri = Deno.env.get("FITBIT_REDIRECT_URI");
+
+      if (!fitbitClientId || !fitbitClientSecret || !fitbitRedirectUri) {
+        const redirectTo = buildRedirect(redirectBase, {
+          health_oauth: "error",
+          provider: "fitbit",
+          reason: "missing_fitbit_env",
+        });
+        return Response.redirect(redirectTo, 302);
+      }
+
+      const basicAuth = btoa(`${fitbitClientId}:${fitbitClientSecret}`);
+      const tokenBody = new URLSearchParams({
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: fitbitRedirectUri,
       });
-      return Response.redirect(redirectTo, 302);
+
+      tokenResponse = await fetch("https://api.fitbit.com/oauth2/token", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: tokenBody.toString(),
+      });
+      tokenJson = (await tokenResponse.json()) as Record<string, unknown>;
+    } else {
+      const googleClientId = Deno.env.get("GOOGLE_FIT_CLIENT_ID");
+      const googleClientSecret = Deno.env.get("GOOGLE_FIT_CLIENT_SECRET");
+      const googleRedirectUri = Deno.env.get("GOOGLE_FIT_REDIRECT_URI");
+
+      if (!googleClientId || !googleClientSecret || !googleRedirectUri) {
+        const redirectTo = buildRedirect(redirectBase, {
+          health_oauth: "error",
+          provider: "google_fit",
+          reason: "missing_google_fit_env",
+        });
+        return Response.redirect(redirectTo, 302);
+      }
+
+      const tokenBody = new URLSearchParams({
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: googleRedirectUri,
+        client_id: googleClientId,
+        client_secret: googleClientSecret,
+      });
+
+      tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: tokenBody.toString(),
+      });
+      tokenJson = (await tokenResponse.json()) as Record<string, unknown>;
+      providerKey = "google_fit";
     }
 
-    const basicAuth = btoa(`${fitbitClientId}:${fitbitClientSecret}`);
-    const tokenBody = new URLSearchParams({
-      code,
-      grant_type: "authorization_code",
-      redirect_uri: fitbitRedirectUri,
-    });
-
-    const tokenResponse = await fetch("https://api.fitbit.com/oauth2/token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: tokenBody.toString(),
-    });
-
-    const tokenJson = await tokenResponse.json();
     if (!tokenResponse.ok) {
-      await admin
-        .from("health_integrations")
-        .upsert(
-          {
-            user_id: row.user_id,
-            provider: "fitbit",
-            status: "error",
-            metadata: {
-              oauth_error: tokenJson,
-              failed_at: new Date().toISOString(),
-            },
+      await admin.from("health_integrations").upsert(
+        {
+          user_id: row.user_id,
+          provider: providerKey,
+          status: "error",
+          metadata: {
+            oauth_error: tokenJson,
+            failed_at: new Date().toISOString(),
           },
-          { onConflict: "user_id,provider" }
-        );
+        },
+        { onConflict: "user_id,provider" }
+      );
 
       await admin
         .from("health_oauth_states")
@@ -167,7 +200,7 @@ Deno.serve(async (req: Request) => {
 
       const redirectTo = buildRedirect(redirectBase, {
         health_oauth: "error",
-        provider: "fitbit",
+        provider: providerKey,
         reason: "token_exchange_failed",
       });
       return Response.redirect(redirectTo, 302);
@@ -188,14 +221,21 @@ Deno.serve(async (req: Request) => {
       .upsert(
         {
           user_id: row.user_id,
-          provider: "fitbit",
-          access_token: tokenJson.access_token,
-          refresh_token: tokenJson.refresh_token || null,
-          token_type: tokenJson.token_type || null,
+          provider: providerKey,
+          access_token: String(tokenJson.access_token || ""),
+          refresh_token: tokenJson.refresh_token
+            ? String(tokenJson.refresh_token)
+            : null,
+          token_type: tokenJson.token_type
+            ? String(tokenJson.token_type)
+            : null,
           scope: scopeList,
           expires_at: expiresAt,
           metadata: {
-            fitbit_user_id: tokenJson.user_id ?? null,
+            external_user_id:
+              (tokenJson.user_id as string | undefined) ??
+              (tokenJson.sub as string | undefined) ??
+              null,
             updated_via: "oauth_callback",
           },
         },
@@ -205,26 +245,24 @@ Deno.serve(async (req: Request) => {
     if (tokenUpsertError) {
       const redirectTo = buildRedirect(redirectBase, {
         health_oauth: "error",
-        provider: "fitbit",
+        provider: providerKey,
         reason: "token_store_failed",
       });
       return Response.redirect(redirectTo, 302);
     }
 
-    await admin
-      .from("health_integrations")
-      .upsert(
-        {
-          user_id: row.user_id,
-          provider: "fitbit",
-          status: "connected",
-          connected_at: new Date().toISOString(),
-          last_sync_at: null,
-          access_scope: scopeList,
-          metadata: { connected_via: "oauth_callback" },
-        },
-        { onConflict: "user_id,provider" }
-      );
+    await admin.from("health_integrations").upsert(
+      {
+        user_id: row.user_id,
+        provider: providerKey,
+        status: "connected",
+        connected_at: new Date().toISOString(),
+        last_sync_at: null,
+        access_scope: scopeList,
+        metadata: { connected_via: "oauth_callback" },
+      },
+      { onConflict: "user_id,provider" }
+    );
 
     await admin
       .from("health_oauth_states")
@@ -233,7 +271,7 @@ Deno.serve(async (req: Request) => {
 
     const redirectTo = buildRedirect(redirectBase, {
       health_oauth: "success",
-      provider: "fitbit",
+      provider: providerKey,
     });
     return Response.redirect(redirectTo, 302);
   } catch (error) {

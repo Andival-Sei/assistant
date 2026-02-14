@@ -18,6 +18,8 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { FadeIn } from "@/components/motion";
 import { motion, AnimatePresence } from "framer-motion";
+import { healthService } from "@/lib/services/health-service";
+import { toast } from "sonner";
 
 interface NavItemProps {
   to: string;
@@ -77,6 +79,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const handleNavClick = () => {
     setIsMobileMenuOpen(false);
   };
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    void healthService.autoSyncConnectedIntegrations().catch((error: Error) => {
+      // Silent-ish fail: show one lightweight hint and do not block UI.
+      toast.error(error.message || "Автосинхронизация здоровья не выполнена");
+    });
+  }, [user?.id]);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">

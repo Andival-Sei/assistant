@@ -89,28 +89,6 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
       requestAnimationFrame(tick);
     });
 
-  const startVideo = async (
-    videoElement: HTMLVideoElement,
-    mediaStream: MediaStream
-  ) => {
-    videoElement.srcObject = mediaStream;
-    videoElement.muted = true;
-    videoElement.playsInline = true;
-    videoElement.setAttribute("playsinline", "true");
-    videoElement.setAttribute("webkit-playsinline", "true");
-
-    try {
-      await videoElement.play();
-      const ready = await waitForVideoReady(videoElement);
-      if (!ready) {
-        throw new Error("Не удалось получить кадр с камеры");
-      }
-    } catch (err) {
-      console.error("Play error:", err);
-      throw new Error("Не удалось запустить видеопоток");
-    }
-  };
-
   const stopCurrentStream = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
@@ -144,6 +122,28 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     if (!videoElement) return;
 
     const initCamera = async () => {
+      const startVideo = async (
+        videoElement: HTMLVideoElement,
+        mediaStream: MediaStream
+      ) => {
+        videoElement.srcObject = mediaStream;
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.setAttribute("playsinline", "true");
+        videoElement.setAttribute("webkit-playsinline", "true");
+
+        try {
+          await videoElement.play();
+          const ready = await waitForVideoReady(videoElement);
+          if (!ready) {
+            throw new Error("Не удалось получить кадр с камеры");
+          }
+        } catch (err) {
+          console.error("Play error:", err);
+          throw new Error("Не удалось запустить видеопоток");
+        }
+      };
+
       try {
         setIsLoading(true);
         setIsVideoReady(false);
@@ -322,7 +322,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     return () => {
       stopCurrentStream();
     };
-  }, [isOpen, facingMode, selectedDeviceId, retryToken]);
+  }, [isOpen, facingMode, selectedDeviceId, retryToken, isEdgeDesktop]);
 
   const handleCapture = async () => {
     try {
@@ -419,9 +419,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         (d) => d.deviceId === selectedDeviceId
       );
       const nextIndex =
-        currentIndex >= 0
-          ? (currentIndex + 1) % availableDevices.length
-          : 0;
+        currentIndex >= 0 ? (currentIndex + 1) % availableDevices.length : 0;
       setSelectedDeviceId(availableDevices[nextIndex].deviceId);
       setRetryToken((prev) => prev + 1);
       return;
@@ -516,11 +514,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
                 >
                   Обновить страницу
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRetry}
-                >
+                <Button variant="outline" size="sm" onClick={handleRetry}>
                   Попробовать снова
                 </Button>
                 <Button

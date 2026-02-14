@@ -34,7 +34,7 @@ function App() {
                 <Routes>
                   <Route index element={<DashboardPage />} />
                   <Route path="finance/*" element={<FinancePage />} />
-                  <Route path="health" element={<HealthPage />} />
+                  <Route path="health/*" element={<HealthPage />} />
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Routes>

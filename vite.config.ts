@@ -7,6 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    chunkSizeWarningLimit: 2500,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

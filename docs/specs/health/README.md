@@ -59,17 +59,17 @@ OAuth — это вход через внешний сервис без пере
 
 ## Данные MVP
 
-| Поле              | Тип        | Источник |
-| ----------------- | ---------- | -------- |
-| `steps`           | integer    | manual/integration |
-| `sleep_hours`     | numeric    | manual/integration |
-| `water_ml`        | integer    | manual/integration |
-| `weight_kg`       | numeric    | manual/integration |
-| `resting_heart_rate` | integer | manual/integration |
-| `systolic_bp`     | integer    | manual/integration |
-| `diastolic_bp`    | integer    | manual/integration |
-| `mood_score`      | integer 1-10 | manual |
-| `note`            | text       | manual |
+| Поле                 | Тип          | Источник           |
+| -------------------- | ------------ | ------------------ |
+| `steps`              | integer      | manual/integration |
+| `sleep_hours`        | numeric      | manual/integration |
+| `water_ml`           | integer      | manual/integration |
+| `weight_kg`          | numeric      | manual/integration |
+| `resting_heart_rate` | integer      | manual/integration |
+| `systolic_bp`        | integer      | manual/integration |
+| `diastolic_bp`       | integer      | manual/integration |
+| `mood_score`         | integer 1-10 | manual             |
+| `note`               | text         | manual             |
 
 ## UX правила
 
