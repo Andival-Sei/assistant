@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { financeService } from "@/lib/services/finance-service";
 import { Button } from "@/components/ui/button";
@@ -130,11 +130,18 @@ export function AddTransactionForm({
   const [receipt, setReceipt] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const nativeCameraInputRef = useRef<HTMLInputElement>(null);
 
   // Проверка доступности камеры
   const isCameraAvailable = useMemo(() => {
     if (typeof window === "undefined") return false;
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }, []);
+
+  const isEdgeAndroid = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent || "";
+    return /Android/i.test(ua) && /EdgA/i.test(ua);
   }, []);
 
   const isSplit = type === "expense" && items.length > 1;
@@ -195,76 +202,10 @@ export function AddTransactionForm({
   const isPending =
     createMutation.isPending || createWithItemsMutation.isPending;
 
-  const handleReceiptUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setReceipt(file);
-      setIsScanning(true);
-      try {
-        const result = await financeService.processReceipt(file);
-
-        // Небольшая задержка для красоты перехода
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        if (result.items && result.items.length > 0) {
-          const newItems = result.items.map(
-            (item: {
-              name: string;
-              amount: number;
-              category_suggestion: string | null;
-            }) => {
-              const suggestedCategory = categories?.find(
-                (c) =>
-                  c.name.toLowerCase() ===
-                  item.category_suggestion?.toLowerCase()
-              );
-              return {
-                id: generateUUID(),
-                amount: String(item.amount),
-                category: suggestedCategory || null,
-                description: item.name,
-              };
-            }
-          );
-          setItems(newItems);
-        } else {
-          const suggestedCategory = categories?.find(
-            (c) =>
-              c.name.toLowerCase() === result.category_suggestion?.toLowerCase()
-          );
-          setItems([
-            {
-              id: generateUUID(),
-              amount: String(result.total_amount || 0),
-              category: suggestedCategory || null,
-              description: result.merchant || "Чек",
-            },
-          ]);
-        }
-
-        if (result.date) {
-          setDate(new Date(result.date));
-        }
-        setType("expense");
-        toast.success("Чек успешно распознан ✨");
-      } catch (error) {
-        console.error("Scanning failed:", error);
-        toast.error(
-          `Ошибка при сканировании: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`
-        );
-      } finally {
-        setIsScanning(false);
-      }
-    }
-  };
-
-  const handleCameraCapture = async (blob: Blob) => {
-    // Преобразуем blob в File для обработки
-    const file = new File([blob], "receipt.jpg", { type: "image/jpeg" });
+  const processReceiptFile = async (file: File) => {
     setReceipt(file);
     setIsScanning(true);
+
     try {
       const result = await financeService.processReceipt(file);
 
@@ -319,6 +260,37 @@ export function AddTransactionForm({
     } finally {
       setIsScanning(false);
     }
+  };
+
+  const handleReceiptUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processReceiptFile(file);
+  };
+
+  const handleCameraCapture = async (blob: Blob) => {
+    // Преобразуем blob в File для обработки
+    const file = new File([blob], "receipt.jpg", { type: "image/jpeg" });
+    await processReceiptFile(file);
+  };
+
+  const handleNativeCameraCapture = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processReceiptFile(file);
+    e.target.value = "";
+  };
+
+  const handlePhotoButtonClick = () => {
+    if (isEdgeAndroid) {
+      nativeCameraInputRef.current?.click();
+      return;
+    }
+    setIsCameraOpen(true);
   };
 
   const handleAddItem = () => {
@@ -923,6 +895,15 @@ export function AddTransactionForm({
                                 Чек
                               </p>
                               <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  ref={nativeCameraInputRef}
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  capture="environment"
+                                  onChange={handleNativeCameraCapture}
+                                  disabled={isScanning}
+                                />
                                 <label
                                   className={cn(
                                     "flex items-center justify-center h-10 rounded-xl border border-input bg-background transition-all cursor-pointer group hover:border-primary hover:bg-accent/30",
@@ -965,7 +946,7 @@ export function AddTransactionForm({
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setIsCameraOpen(true)}
+                                    onClick={handlePhotoButtonClick}
                                     disabled={isScanning}
                                     className="h-10 rounded-xl"
                                   >
