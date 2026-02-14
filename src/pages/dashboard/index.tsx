@@ -32,7 +32,7 @@ export function DashboardPage() {
 
   const { data: transactions } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => financeService.getTransactions(10),
+    queryFn: () => financeService.getTransactions({ limit: 10 }),
   });
 
   const totalBalance = useMemo(

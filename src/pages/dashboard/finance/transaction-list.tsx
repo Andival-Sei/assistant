@@ -22,10 +22,7 @@ import { parseISO } from "date-fns";
 
 function DateHeader({ date }: { date: string }) {
   return (
-    <motion.div
-      layout="position"
-      className="sticky top-0 z-10 pt-1 pb-2"
-    >
+    <motion.div layout="position" className="sticky top-0 z-10 pt-1 pb-2">
       <div className="inline-flex items-center gap-2 rounded-full bg-muted/40 px-3 py-1.5 text-muted-foreground backdrop-blur-md">
         <Calendar className="h-3.5 w-3.5 shrink-0" />
         <span className="text-xs font-medium">{date}</span>
@@ -190,7 +187,7 @@ export function TransactionList({
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["transactions", limit],
-    queryFn: () => financeService.getTransactions(limit),
+    queryFn: () => financeService.getTransactions({ limit }),
   });
 
   const filteredTransactions = useMemo(() => {
@@ -287,58 +284,60 @@ export function TransactionList({
           className="px-4 py-4 space-y-6"
         >
           <AnimatePresence mode="popLayout" initial={false}>
-            {Array.from(grouped.entries()).map(([dateKey, dateTransactions]) => (
-              <motion.div
-                key={dateKey}
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{
-                  duration: 0.2,
-                  layout: {
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 40,
-                  },
-                }}
-                className="space-y-3"
-              >
-                <DateHeader date={dateKey} />
-                <div className="space-y-2">
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    {dateTransactions.map((tx) => (
-                      <FadeIn
-                        key={tx.id}
-                        layout
-                        direction="none"
-                        distance={0}
-                        delay={0}
-                        exit={{
-                          opacity: 0,
-                          scale: 0.98,
-                          transition: { duration: 0.2 },
-                        }}
-                        transition={{
-                          layout: {
-                            type: "spring",
-                            stiffness: 500,
-                            damping: 40,
-                          },
-                          opacity: { duration: 0.2 },
-                        }}
-                      >
-                        <TransactionRow
-                          tx={tx}
-                          isExpanded={expandedIds.has(tx.id)}
-                          onToggleExpand={() => toggleExpand(tx.id)}
-                        />
-                      </FadeIn>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            ))}
+            {Array.from(grouped.entries()).map(
+              ([dateKey, dateTransactions]) => (
+                <motion.div
+                  key={dateKey}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{
+                    duration: 0.2,
+                    layout: {
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 40,
+                    },
+                  }}
+                  className="space-y-3"
+                >
+                  <DateHeader date={dateKey} />
+                  <div className="space-y-2">
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {dateTransactions.map((tx) => (
+                        <FadeIn
+                          key={tx.id}
+                          layout
+                          direction="none"
+                          distance={0}
+                          delay={0}
+                          exit={{
+                            opacity: 0,
+                            scale: 0.98,
+                            transition: { duration: 0.2 },
+                          }}
+                          transition={{
+                            layout: {
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 40,
+                            },
+                            opacity: { duration: 0.2 },
+                          }}
+                        >
+                          <TransactionRow
+                            tx={tx}
+                            isExpanded={expandedIds.has(tx.id)}
+                            onToggleExpand={() => toggleExpand(tx.id)}
+                          />
+                        </FadeIn>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              )
+            )}
           </AnimatePresence>
         </motion.div>
       )}

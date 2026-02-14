@@ -41,7 +41,11 @@ export function CustomCalendar({
       <CalendarModal
         isOpen={isOpen}
         selected={selected}
-        onSelect={onSelect}
+        onSelect={(date) => {
+          if (date instanceof Date || date === undefined) {
+            onSelect(date);
+          }
+        }}
         onClose={() => setIsOpen(false)}
       />
     </div>

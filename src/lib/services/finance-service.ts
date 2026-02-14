@@ -12,6 +12,19 @@ import type {
   TransactionItemFormData,
 } from "@/types/finance";
 
+type ReceiptScanResult = {
+  merchant: string | null;
+  date: string | null;
+  total_amount: number | null;
+  currency: string | null;
+  category_suggestion: string | null;
+  items: Array<{
+    name: string;
+    amount: number;
+    category_suggestion: string | null;
+  }>;
+};
+
 type RawTransactionRow = Transaction & {
   items?: Array<{
     id: string;
@@ -125,6 +138,54 @@ export const financeService = {
     return data || [];
   },
 
+  async createCategory(
+    category: Omit<Category, "id" | "user_id" | "created_at" | "is_default">
+  ): Promise<Category> {
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
+    if (!user?.id) throw new Error("Пользователь не авторизован");
+
+    const { data, error } = await supabaseClient
+      .from("categories")
+      .insert({
+        ...category,
+        user_id: user.id,
+        is_default: false,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCategory(
+    id: string,
+    updates: Partial<
+      Omit<Category, "id" | "user_id" | "created_at" | "is_default">
+    >
+  ): Promise<Category> {
+    const { data, error } = await supabaseClient
+      .from("categories")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const { error } = await supabaseClient
+      .from("categories")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  },
+
   async seedDefaultCategories(): Promise<void> {
     const {
       data: { user },
@@ -180,11 +241,13 @@ export const financeService = {
   },
 
   // Transactions
-  async getTransactions(limit = 50): Promise<TransactionWithItems[]> {
-    const { data, error } = await supabaseClient
-      .from("transactions")
-      .select(
-        `
+  async getTransactions(params?: {
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<TransactionWithItems[]> {
+    let query = supabaseClient.from("transactions").select(
+      `
         *,
         items:transaction_items(
           id,
@@ -198,9 +261,18 @@ export const financeService = {
           category:categories(id, name, type, icon, color)
         )
       `
-      )
+    );
+
+    if (params?.startDate) {
+      query = query.gte("date", params.startDate);
+    }
+    if (params?.endDate) {
+      query = query.lte("date", params.endDate);
+    }
+
+    const { data, error } = await query
       .order("date", { ascending: false })
-      .limit(limit);
+      .limit(params?.limit ?? 500);
 
     if (error) throw error;
     const rows = (data || []) as RawTransactionRow[];
@@ -363,6 +435,75 @@ export const financeService = {
     }
 
     return transformTransactionRow(fullRow as RawTransactionRow);
+  },
+
+  async processReceipt(file: File): Promise<ReceiptScanResult> {
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+
+    if (!session) {
+      console.error("ProcessReceipt: No session found");
+      throw new Error("Сессия не найдена. Пожалуйста, войдите снова.");
+    }
+
+    // Конвертируем файл в base64
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    console.log(
+      "ProcessReceipt: Invoking function with token length:",
+      session.access_token.length
+    );
+
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!anonKey) {
+      throw new Error(
+        "VITE_SUPABASE_ANON_KEY не задан. Невозможно вызвать Edge Function."
+      );
+    }
+
+    const { data, error } = await supabaseClient.functions.invoke(
+      "process-receipt",
+      {
+        body: {
+          file_data: base64,
+          file_name: file.name,
+          file_type: file.type,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: anonKey,
+        },
+      }
+    );
+
+    if (error) {
+      let errorMessage = error.message;
+      if (error.context instanceof Response) {
+        try {
+          const text = await error.context.text();
+          try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = text || errorMessage;
+          }
+        } catch (e) {
+          console.error("Error parsing function error context:", e);
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return data;
   },
 
   async updateBalance(walletId: string, change: number) {

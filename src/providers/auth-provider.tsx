@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/db/supabase-client";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
+import { LoadingScreen } from "@/components/ui/loading-screen";
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -59,14 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [setLoading, setSession, setUnauthenticated]);
 
   if (!isBootstrapped) {
-    // Простой лоадер, чтобы не мигал контент до инициализации
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <div className="text-sm text-muted-foreground">
-          Загрузка приложения...
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return children;

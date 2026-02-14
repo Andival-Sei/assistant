@@ -12,6 +12,7 @@ import { CategoriesTab } from "./tabs/categories-tab";
 import { WalletsTab } from "./tabs/wallets-tab";
 import { TransactionsTab } from "./tabs/transactions-tab";
 import { AnalyticsTab } from "./tabs/analytics-tab";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 const tabs = [
   { id: "overview", label: "Обзор", path: "/dashboard/finance" },
@@ -70,17 +71,12 @@ export function FinancePage() {
     }
   }, [
     categoriesLoading,
-    categories?.length,
+    categories,
     seedCategoriesMutation.isPending,
     seedCategoriesMutation,
   ]);
 
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Загрузка...
-      </div>
-    );
+  if (isLoading) return <LoadingScreen />;
 
   if (!wallets?.length) {
     return (

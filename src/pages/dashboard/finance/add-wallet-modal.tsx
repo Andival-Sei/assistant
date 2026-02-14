@@ -8,6 +8,7 @@ import { Wallet } from "@/types/finance";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { toast } from "sonner";
 
 interface AddWalletModalProps {
   onClose: () => void;
@@ -45,7 +46,7 @@ export function AddWalletModal({ onClose, walletToEdit }: AddWalletModalProps) {
       onClose();
     },
     onError: (error) => {
-      alert(
+      toast.error(
         `Ошибка: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`
       );
     },
@@ -93,12 +94,19 @@ export function AddWalletModal({ onClose, walletToEdit }: AddWalletModalProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+      />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col"
       >
         <div className="flex items-center justify-between p-4 border-b bg-muted/30">
           <h2 className="text-lg font-semibold">

@@ -12,11 +12,12 @@ import "react-day-picker/style.css";
 
 interface CalendarModalProps {
   isOpen: boolean;
-  selected?: Date;
-  onSelect: (date: Date | undefined) => void;
+  selected?: Date | { from: Date; to: Date };
+  onSelect: (date: Date | { from: Date; to: Date } | undefined) => void;
   onClose: () => void;
   fromYear?: number;
   toYear?: number;
+  mode?: "single" | "range";
 }
 
 const capitalize = (value: string) =>
@@ -29,14 +30,25 @@ export function CalendarModal({
   onClose,
   fromYear = 2020,
   toYear = 2030,
+  mode = "single",
 }: CalendarModalProps) {
   const [displayMonth, setDisplayMonth] = useState<Date>(
-    selected ?? new Date()
+    selected instanceof Date
+      ? selected
+      : selected && "from" in selected
+        ? selected.from
+        : new Date()
   );
 
   useEffect(() => {
     if (isOpen) {
-      setDisplayMonth(selected ?? new Date());
+      setDisplayMonth(
+        selected instanceof Date
+          ? selected
+          : selected && "from" in selected
+            ? selected.from
+            : new Date()
+      );
     }
   }, [isOpen, selected]);
 
@@ -78,7 +90,7 @@ export function CalendarModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -113,7 +125,7 @@ export function CalendarModal({
                       next.setMonth(Number(value));
                       setDisplayMonth(next);
                     }}
-                    className="min-w-[140px]"
+                    className="min-w-36"
                   />
                   <CustomSelect
                     options={yearOptions}
@@ -123,7 +135,7 @@ export function CalendarModal({
                       next.setFullYear(Number(value));
                       setDisplayMonth(next);
                     }}
-                    className="min-w-[96px]"
+                    className="min-w-24"
                   />
                 </div>
                 <Button
@@ -148,46 +160,104 @@ export function CalendarModal({
             </div>
 
             <div className="p-4 calendar-modal">
-              <DayPicker
-                mode="single"
-                selected={selected}
-                onSelect={(date) => {
-                  onSelect(date);
-                  onClose();
-                }}
-                month={displayMonth}
-                onMonthChange={setDisplayMonth}
-                locale={ru}
-                showOutsideDays
-                hideNavigation
-                components={{
-                  MonthCaption: () => <></>,
-                  Nav: () => <></>,
-                }}
-                className="p-0"
-                classNames={{
-                  months: "flex flex-col",
-                  month: "space-y-3",
-                  caption: "hidden",
-                  table: "w-full border-collapse",
-                  head_row: "flex",
-                  head_cell:
-                    "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                  row: "flex w-full mt-2",
-                  cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                  day: cn(
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md transition-colors data-[selected]:bg-foreground data-[selected]:text-background data-[selected]:hover:bg-foreground data-[selected]:hover:text-background focus:bg-foreground focus:text-background outline-none focus:outline-none focus:ring-0"
-                  ),
-                  day_selected:
-                    "bg-foreground text-background hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background",
-                  day_today: "text-foreground font-medium",
-                  day_outside: "text-muted-foreground opacity-50",
-                  day_disabled: "text-muted-foreground opacity-50",
-                  day_range_middle:
-                    "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                  day_hidden: "invisible",
-                }}
-              />
+              {mode === "range" ? (
+                <DayPicker
+                  mode="range"
+                  required
+                  selected={selected as { from: Date; to: Date } | undefined}
+                  onSelect={(
+                    date: Date | { from?: Date; to?: Date } | undefined
+                  ) => {
+                    // Преобразуем в требуемый формат
+                    if (
+                      date &&
+                      typeof date === "object" &&
+                      "from" in date &&
+                      "to" in date
+                    ) {
+                      onSelect({ from: date.from, to: date.to } as {
+                        from: Date;
+                        to: Date;
+                      });
+                    } else {
+                      onSelect(date as Date | undefined);
+                    }
+                  }}
+                  month={displayMonth}
+                  onMonthChange={setDisplayMonth}
+                  locale={ru}
+                  showOutsideDays
+                  hideNavigation
+                  components={{
+                    MonthCaption: () => <></>,
+                    Nav: () => <></>,
+                  }}
+                  className="p-0"
+                  classNames={{
+                    months: "flex flex-col",
+                    month: "space-y-3",
+                    caption: "hidden",
+                    table: "w-full border-collapse",
+                    head_row: "flex",
+                    head_cell:
+                      "text-muted-foreground rounded-md w-9 font-normal text-xs",
+                    row: "flex w-full mt-2",
+                    cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: cn(
+                      "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md transition-colors data-[selected]:bg-foreground data-[selected]:text-background data-[selected]:hover:bg-foreground data-[selected]:hover:text-background focus:bg-foreground focus:text-background outline-none focus:outline-none focus:ring-0"
+                    ),
+                    day_selected:
+                      "bg-foreground text-background hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background",
+                    day_today: "text-foreground font-medium",
+                    day_outside: "text-muted-foreground opacity-50",
+                    day_disabled: "text-muted-foreground opacity-50",
+                    day_range_middle:
+                      "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    day_hidden: "invisible",
+                  }}
+                />
+              ) : (
+                <DayPicker
+                  mode="single"
+                  selected={selected as Date | undefined}
+                  onSelect={(date: Date | undefined) => {
+                    onSelect(date);
+                    if (mode === "single") onClose();
+                  }}
+                  month={displayMonth}
+                  onMonthChange={setDisplayMonth}
+                  locale={ru}
+                  showOutsideDays
+                  hideNavigation
+                  components={{
+                    MonthCaption: () => <></>,
+                    Nav: () => <></>,
+                  }}
+                  className="p-0"
+                  classNames={{
+                    months: "flex flex-col",
+                    month: "space-y-3",
+                    caption: "hidden",
+                    table: "w-full border-collapse",
+                    head_row: "flex",
+                    head_cell:
+                      "text-muted-foreground rounded-md w-9 font-normal text-xs",
+                    row: "flex w-full mt-2",
+                    cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: cn(
+                      "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md transition-colors data-[selected]:bg-foreground data-[selected]:text-background data-[selected]:hover:bg-foreground data-[selected]:hover:text-background focus:bg-foreground focus:text-background outline-none focus:outline-none focus:ring-0"
+                    ),
+                    day_selected:
+                      "bg-foreground text-background hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background",
+                    day_today: "text-foreground font-medium",
+                    day_outside: "text-muted-foreground opacity-50",
+                    day_disabled: "text-muted-foreground opacity-50",
+                    day_range_middle:
+                      "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    day_hidden: "invisible",
+                  }}
+                />
+              )}
             </div>
           </motion.div>
         </div>

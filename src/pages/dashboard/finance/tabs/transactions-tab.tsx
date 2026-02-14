@@ -26,6 +26,8 @@ const SORT_LABELS: Record<TransactionSortBy, string> = {
   amountAsc: "По сумме: возрастание",
 };
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 export function TransactionsTab() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<TransactionFilterType>("all");
@@ -41,7 +43,7 @@ export function TransactionsTab() {
 
   const { isLoading } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => financeService.getTransactions(500),
+    queryFn: () => financeService.getTransactions({ limit: 500 }),
   });
 
   const hasActiveFilter = filterType !== "all" || walletId !== "";
@@ -203,9 +205,24 @@ export function TransactionsTab() {
 
       <div className="bg-card/30 rounded-2xl border border-border/50 backdrop-blur-xl overflow-hidden min-h-[500px]">
         {isLoading ? (
-          <div className="p-8 space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+          <div className="p-4 space-y-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-[72px] rounded-xl border border-border/50 bg-card/10 p-4 flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <Skeleton className="h-4 w-[60%]" />
+                    <Skeleton className="h-3 w-[40%]" />
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
             ))}
           </div>
         ) : (

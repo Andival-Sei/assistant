@@ -1,0 +1,622 @@
+
+> assistant@0.1.0 lint F:\pet-projects\assistant
+> eslint .
+F:\pet-projects\assistant\src\App.tsx
+  58:15  warning  Delete `·`  prettier/prettier
+  59:30  warning  Delete `·`  prettier/prettier
+  60:19  warning  Delete `·`  prettier/prettier
+F:\pet-projects\assistant\src\components\motion\fade-in.tsx
+  31:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+F:\pet-projects\assistant\src\components\ui\button.tsx
+  52:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+F:\pet-projects\assistant\src\components\ui\calendar-modal.tsx
+   38:10  warning  Replace `selected·as·any)?.from·??·new·Date(` with `(selected·as·any)?.from·??·new·Date()`  prettier/prettier
+   38:22  error    Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+   46:14  warning  Replace `selected·as·any)?.from·??·new·Date(` with `(selected·as·any)?.from·??·new·Date()`  prettier/prettier
+   46:26  error    Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  160:31  error    Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  161:39  error    Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  163:36  error    Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+F:\pet-projects\assistant\src\components\ui\popover.tsx
+   61:6   warning  React Hook useEffect has a missing dependency: 'setIsOpen'. Either include it or remove the dependency array                                                                                                          react-hooks/exhaustive-deps
+   92:62  error    Unexpected any. Specify a different type                                                                                                                                                                              @typescript-eslint/no-explicit-any
+  151:6   warning  Replace `pos:·{·top:·number;·left:·number;·width:·number·},·contentW:·number,·contentH:·number` with `⏎······pos:·{·top:·number;·left:·number;·width:·number·},⏎······contentW:·number,⏎······contentH:·number⏎····`  prettier/prettier
+  169:46  warning  Insert `⏎·······`                                                                                                                                                                                                     prettier/prettier
+  203:11  warning  Replace `⏎········clamped.left·!==·position.left·||⏎········clamped.top·!==·position.top⏎······` with `clamped.left·!==·position.left·||·clamped.top·!==·position.top`                                                prettier/prettier
+  229:6   warning  React Hook useEffect has a missing dependency: 'contentRef'. Either include it or remove the dependency array                                                                                                         react-hooks/exhaustive-deps
+F:\pet-projects\assistant\src\lib\db\seed-categories-data.ts
+    1:4   warning  Delete `␍`  prettier/prettier
+    2:48  warning  Delete `␍`  prettier/prettier
+    3:56  warning  Delete `␍`  prettier/prettier
+    4:80  warning  Delete `␍`  prettier/prettier
+    5:4   warning  Delete `␍`  prettier/prettier
+    6:32  warning  Delete `␍`  prettier/prettier
+    7:16  warning  Delete `␍`  prettier/prettier
+    8:30  warning  Delete `␍`  prettier/prettier
+    9:17  warning  Delete `␍`  prettier/prettier
+   10:18  warning  Delete `␍`  prettier/prettier
+   11:55  warning  Delete `␍`  prettier/prettier
+   12:19  warning  Delete `␍`  prettier/prettier
+   13:2   warning  Delete `␍`  prettier/prettier
+   14:1   warning  Delete `␍`  prettier/prettier
+   15:57  warning  Delete `␍`  prettier/prettier
+   16:43  warning  Delete `␍`  prettier/prettier
+   17:77  warning  Delete `␍`  prettier/prettier
+   18:70  warning  Delete `␍`  prettier/prettier
+   19:81  warning  Delete `␍`  prettier/prettier
+   20:4   warning  Delete `␍`  prettier/prettier
+   21:33  warning  Delete `␍`  prettier/prettier
+   22:20  warning  Delete `␍`  prettier/prettier
+   23:18  warning  Delete `␍`  prettier/prettier
+   24:22  warning  Delete `␍`  prettier/prettier
+   25:5   warning  Delete `␍`  prettier/prettier
+   26:80  warning  Delete `␍`  prettier/prettier
+   27:71  warning  Delete `␍`  prettier/prettier
+   28:79  warning  Delete `␍`  prettier/prettier
+   29:1   warning  Delete `␍`  prettier/prettier
+   30:44  warning  Delete `␍`  prettier/prettier
+   31:72  warning  Delete `␍`  prettier/prettier
+   32:73  warning  Delete `␍`  prettier/prettier
+   33:70  warning  Delete `␍`  prettier/prettier
+   34:74  warning  Delete `␍`  prettier/prettier
+   35:76  warning  Delete `␍`  prettier/prettier
+   36:81  warning  Delete `␍`  prettier/prettier
+   37:80  warning  Delete `␍`  prettier/prettier
+   38:80  warning  Delete `␍`  prettier/prettier
+   39:76  warning  Delete `␍`  prettier/prettier
+   40:79  warning  Delete `␍`  prettier/prettier
+   41:4   warning  Delete `␍`  prettier/prettier
+   42:28  warning  Delete `␍`  prettier/prettier
+   43:21  warning  Delete `␍`  prettier/prettier
+   44:22  warning  Delete `␍`  prettier/prettier
+   45:22  warning  Delete `␍`  prettier/prettier
+   46:5   warning  Delete `␍`  prettier/prettier
+   47:4   warning  Delete `␍`  prettier/prettier
+   48:28  warning  Delete `␍`  prettier/prettier
+   49:21  warning  Delete `␍`  prettier/prettier
+   50:22  warning  Delete `␍`  prettier/prettier
+   51:22  warning  Delete `␍`  prettier/prettier
+   52:5   warning  Delete `␍`  prettier/prettier
+   53:77  warning  Delete `␍`  prettier/prettier
+   54:69  warning  Delete `␍`  prettier/prettier
+   55:81  warning  Delete `␍`  prettier/prettier
+   56:76  warning  Delete `␍`  prettier/prettier
+   57:76  warning  Delete `␍`  prettier/prettier
+   58:4   warning  Delete `␍`  prettier/prettier
+   59:43  warning  Delete `␍`  prettier/prettier
+   60:21  warning  Delete `␍`  prettier/prettier
+   61:18  warning  Delete `␍`  prettier/prettier
+   62:22  warning  Delete `␍`  prettier/prettier
+   63:5   warning  Delete `␍`  prettier/prettier
+   64:81  warning  Delete `␍`  prettier/prettier
+   65:1   warning  Delete `␍`  prettier/prettier
+   66:45  warning  Delete `␍`  prettier/prettier
+   67:79  warning  Delete `␍`  prettier/prettier
+   68:4   warning  Delete `␍`  prettier/prettier
+   69:30  warning  Delete `␍`  prettier/prettier
+   70:21  warning  Delete `␍`  prettier/prettier
+   71:30  warning  Delete `␍`  prettier/prettier
+   72:19  warning  Delete `␍`  prettier/prettier
+   73:5   warning  Delete `␍`  prettier/prettier
+   74:77  warning  Delete `␍`  prettier/prettier
+   75:70  warning  Delete `␍`  prettier/prettier
+   76:1   warning  Delete `␍`  prettier/prettier
+   77:32  warning  Delete `␍`  prettier/prettier
+   78:4   warning  Delete `␍`  prettier/prettier
+   79:26  warning  Delete `␍`  prettier/prettier
+   80:21  warning  Delete `␍`  prettier/prettier
+   81:23  warning  Delete `␍`  prettier/prettier
+   82:24  warning  Delete `␍`  prettier/prettier
+   83:5   warning  Delete `␍`  prettier/prettier
+   84:4   warning  Delete `␍`  prettier/prettier
+   85:33  warning  Delete `␍`  prettier/prettier
+   86:21  warning  Delete `␍`  prettier/prettier
+   87:18  warning  Delete `␍`  prettier/prettier
+   88:24  warning  Delete `␍`  prettier/prettier
+   89:5   warning  Delete `␍`  prettier/prettier
+   90:4   warning  Delete `␍`  prettier/prettier
+   91:31  warning  Delete `␍`  prettier/prettier
+   92:21  warning  Delete `␍`  prettier/prettier
+   93:18  warning  Delete `␍`  prettier/prettier
+   94:24  warning  Delete `␍`  prettier/prettier
+   95:5   warning  Delete `␍`  prettier/prettier
+   96:74  warning  Delete `␍`  prettier/prettier
+   97:4   warning  Delete `␍`  prettier/prettier
+   98:28  warning  Delete `␍`  prettier/prettier
+   99:21  warning  Delete `␍`  prettier/prettier
+  100:19  warning  Delete `␍`  prettier/prettier
+  101:24  warning  Delete `␍`  prettier/prettier
+  102:5   warning  Delete `␍`  prettier/prettier
+  103:4   warning  Delete `␍`  prettier/prettier
+  104:28  warning  Delete `␍`  prettier/prettier
+  105:21  warning  Delete `␍`  prettier/prettier
+  106:23  warning  Delete `␍`  prettier/prettier
+  107:24  warning  Delete `␍`  prettier/prettier
+  108:5   warning  Delete `␍`  prettier/prettier
+  109:4   warning  Delete `␍`  prettier/prettier
+  110:30  warning  Delete `␍`  prettier/prettier
+  111:21  warning  Delete `␍`  prettier/prettier
+  112:19  warning  Delete `␍`  prettier/prettier
+  113:24  warning  Delete `␍`  prettier/prettier
+  114:5   warning  Delete `␍`  prettier/prettier
+  115:78  warning  Delete `␍`  prettier/prettier
+  116:4   warning  Delete `␍`  prettier/prettier
+  117:38  warning  Delete `␍`  prettier/prettier
+  118:21  warning  Delete `␍`  prettier/prettier
+  119:20  warning  Delete `␍`  prettier/prettier
+  120:24  warning  Delete `␍`  prettier/prettier
+  121:5   warning  Delete `␍`  prettier/prettier
+  122:4   warning  Delete `␍`  prettier/prettier
+  123:32  warning  Delete `␍`  prettier/prettier
+  124:21  warning  Delete `␍`  prettier/prettier
+  125:18  warning  Delete `␍`  prettier/prettier
+  126:24  warning  Delete `␍`  prettier/prettier
+  127:5   warning  Delete `␍`  prettier/prettier
+  128:4   warning  Delete `␍`  prettier/prettier
+  129:31  warning  Delete `␍`  prettier/prettier
+  130:21  warning  Delete `␍`  prettier/prettier
+  131:18  warning  Delete `␍`  prettier/prettier
+  132:24  warning  Delete `␍`  prettier/prettier
+  133:5   warning  Delete `␍`  prettier/prettier
+  134:4   warning  Delete `␍`  prettier/prettier
+  135:35  warning  Delete `␍`  prettier/prettier
+  136:21  warning  Delete `␍`  prettier/prettier
+  137:23  warning  Delete `␍`  prettier/prettier
+  138:24  warning  Delete `␍`  prettier/prettier
+  139:5   warning  Delete `␍`  prettier/prettier
+  140:4   warning  Delete `␍`  prettier/prettier
+  141:40  warning  Delete `␍`  prettier/prettier
+  142:21  warning  Delete `␍`  prettier/prettier
+  143:18  warning  Delete `␍`  prettier/prettier
+  144:24  warning  Delete `␍`  prettier/prettier
+  145:5   warning  Delete `␍`  prettier/prettier
+  146:4   warning  Delete `␍`  prettier/prettier
+  147:29  warning  Delete `␍`  prettier/prettier
+  148:21  warning  Delete `␍`  prettier/prettier
+  149:27  warning  Delete `␍`  prettier/prettier
+  150:24  warning  Delete `␍`  prettier/prettier
+  151:5   warning  Delete `␍`  prettier/prettier
+  152:1   warning  Delete `␍`  prettier/prettier
+  153:37  warning  Delete `␍`  prettier/prettier
+  154:75  warning  Delete `␍`  prettier/prettier
+  155:4   warning  Delete `␍`  prettier/prettier
+  156:36  warning  Delete `␍`  prettier/prettier
+  157:21  warning  Delete `␍`  prettier/prettier
+  158:17  warning  Delete `␍`  prettier/prettier
+  159:25  warning  Delete `␍`  prettier/prettier
+  160:5   warning  Delete `␍`  prettier/prettier
+  161:4   warning  Delete `␍`  prettier/prettier
+  162:37  warning  Delete `␍`  prettier/prettier
+  163:21  warning  Delete `␍`  prettier/prettier
+  164:20  warning  Delete `␍`  prettier/prettier
+  165:25  warning  Delete `␍`  prettier/prettier
+  166:5   warning  Delete `␍`  prettier/prettier
+  167:4   warning  Delete `␍`  prettier/prettier
+  168:34  warning  Delete `␍`  prettier/prettier
+  169:21  warning  Delete `␍`  prettier/prettier
+  170:20  warning  Delete `␍`  prettier/prettier
+  171:25  warning  Delete `␍`  prettier/prettier
+  172:5   warning  Delete `␍`  prettier/prettier
+  173:79  warning  Delete `␍`  prettier/prettier
+  174:72  warning  Delete `␍`  prettier/prettier
+  175:4   warning  Delete `␍`  prettier/prettier
+  176:23  warning  Delete `␍`  prettier/prettier
+  177:21  warning  Delete `␍`  prettier/prettier
+  178:23  warning  Delete `␍`  prettier/prettier
+  179:25  warning  Delete `␍`  prettier/prettier
+  180:5   warning  Delete `␍`  prettier/prettier
+  181:1   warning  Delete `␍`  prettier/prettier
+  182:33  warning  Delete `␍`  prettier/prettier
+  183:78  warning  Delete `␍`  prettier/prettier
+  184:4   warning  Delete `␍`  prettier/prettier
+  185:34  warning  Delete `␍`  prettier/prettier
+  186:21  warning  Delete `␍`  prettier/prettier
+  187:17  warning  Delete `␍`  prettier/prettier
+  188:21  warning  Delete `␍`  prettier/prettier
+  189:5   warning  Delete `␍`  prettier/prettier
+  190:4   warning  Delete `␍`  prettier/prettier
+  191:35  warning  Delete `␍`  prettier/prettier
+  192:21  warning  Delete `␍`  prettier/prettier
+  193:20  warning  Delete `␍`  prettier/prettier
+  194:21  warning  Delete `␍`  prettier/prettier
+  195:5   warning  Delete `␍`  prettier/prettier
+  196:81  warning  Delete `␍`  prettier/prettier
+  197:4   warning  Delete `␍`  prettier/prettier
+  198:29  warning  Delete `␍`  prettier/prettier
+  199:21  warning  Delete `␍`  prettier/prettier
+  200:26  warning  Delete `␍`  prettier/prettier
+  201:21  warning  Delete `␍`  prettier/prettier
+  202:5   warning  Delete `␍`  prettier/prettier
+  203:4   warning  Delete `␍`  prettier/prettier
+  204:34  warning  Delete `␍`  prettier/prettier
+  205:21  warning  Delete `␍`  prettier/prettier
+  206:23  warning  Delete `␍`  prettier/prettier
+  207:21  warning  Delete `␍`  prettier/prettier
+  208:5   warning  Delete `␍`  prettier/prettier
+  209:1   warning  Delete `␍`  prettier/prettier
+  210:36  warning  Delete `␍`  prettier/prettier
+  211:4   warning  Delete `␍`  prettier/prettier
+  212:32  warning  Delete `␍`  prettier/prettier
+  213:21  warning  Delete `␍`  prettier/prettier
+  214:25  warning  Delete `␍`  prettier/prettier
+  215:24  warning  Delete `␍`  prettier/prettier
+  216:5   warning  Delete `␍`  prettier/prettier
+  217:76  warning  Delete `␍`  prettier/prettier
+  218:4   warning  Delete `␍`  prettier/prettier
+  219:37  warning  Delete `␍`  prettier/prettier
+  220:21  warning  Delete `␍`  prettier/prettier
+  221:20  warning  Delete `␍`  prettier/prettier
+  222:24  warning  Delete `␍`  prettier/prettier
+  223:5   warning  Delete `␍`  prettier/prettier
+  224:80  warning  Delete `␍`  prettier/prettier
+  225:4   warning  Delete `␍`  prettier/prettier
+  226:37  warning  Delete `␍`  prettier/prettier
+  227:21  warning  Delete `␍`  prettier/prettier
+  228:21  warning  Delete `␍`  prettier/prettier
+  229:24  warning  Delete `␍`  prettier/prettier
+  230:5   warning  Delete `␍`  prettier/prettier
+  231:1   warning  Delete `␍`  prettier/prettier
+  232:39  warning  Delete `␍`  prettier/prettier
+  233:4   warning  Delete `␍`  prettier/prettier
+  234:27  warning  Delete `␍`  prettier/prettier
+  235:21  warning  Delete `␍`  prettier/prettier
+  236:18  warning  Delete `␍`  prettier/prettier
+  237:27  warning  Delete `␍`  prettier/prettier
+  238:5   warning  Delete `␍`  prettier/prettier
+  239:4   warning  Delete `␍`  prettier/prettier
+  240:32  warning  Delete `␍`  prettier/prettier
+  241:21  warning  Delete `␍`  prettier/prettier
+  242:23  warning  Delete `␍`  prettier/prettier
+  243:27  warning  Delete `␍`  prettier/prettier
+  244:5   warning  Delete `␍`  prettier/prettier
+  245:78  warning  Delete `␍`  prettier/prettier
+  246:4   warning  Delete `␍`  prettier/prettier
+  247:39  warning  Delete `␍`  prettier/prettier
+  248:21  warning  Delete `␍`  prettier/prettier
+  249:16  warning  Delete `␍`  prettier/prettier
+  250:27  warning  Delete `␍`  prettier/prettier
+  251:5   warning  Delete `␍`  prettier/prettier
+  252:4   warning  Delete `␍`  prettier/prettier
+  253:36  warning  Delete `␍`  prettier/prettier
+  254:21  warning  Delete `␍`  prettier/prettier
+  255:19  warning  Delete `␍`  prettier/prettier
+  256:27  warning  Delete `␍`  prettier/prettier
+  257:5   warning  Delete `␍`  prettier/prettier
+  258:1   warning  Delete `␍`  prettier/prettier
+  259:39  warning  Delete `␍`  prettier/prettier
+  260:4   warning  Delete `␍`  prettier/prettier
+  261:30  warning  Delete `␍`  prettier/prettier
+  262:21  warning  Delete `␍`  prettier/prettier
+  263:28  warning  Delete `␍`  prettier/prettier
+  264:27  warning  Delete `␍`  prettier/prettier
+  265:5   warning  Delete `␍`  prettier/prettier
+  266:4   warning  Delete `␍`  prettier/prettier
+  267:29  warning  Delete `␍`  prettier/prettier
+  268:21  warning  Delete `␍`  prettier/prettier
+  269:20  warning  Delete `␍`  prettier/prettier
+  270:27  warning  Delete `␍`  prettier/prettier
+  271:5   warning  Delete `␍`  prettier/prettier
+  272:4   warning  Delete `␍`  prettier/prettier
+  273:39  warning  Delete `␍`  prettier/prettier
+  274:21  warning  Delete `␍`  prettier/prettier
+  275:18  warning  Delete `␍`  prettier/prettier
+  276:27  warning  Delete `␍`  prettier/prettier
+  277:5   warning  Delete `␍`  prettier/prettier
+  278:1   warning  Delete `␍`  prettier/prettier
+  279:35  warning  Delete `␍`  prettier/prettier
+  280:4   warning  Delete `␍`  prettier/prettier
+  281:25  warning  Delete `␍`  prettier/prettier
+  282:21  warning  Delete `␍`  prettier/prettier
+  283:24  warning  Delete `␍`  prettier/prettier
+  284:23  warning  Delete `␍`  prettier/prettier
+  285:5   warning  Delete `␍`  prettier/prettier
+  286:4   warning  Delete `␍`  prettier/prettier
+  287:29  warning  Delete `␍`  prettier/prettier
+  288:21  warning  Delete `␍`  prettier/prettier
+  289:23  warning  Delete `␍`  prettier/prettier
+  290:23  warning  Delete `␍`  prettier/prettier
+  291:5   warning  Delete `␍`  prettier/prettier
+  292:4   warning  Delete `␍`  prettier/prettier
+  293:31  warning  Delete `␍`  prettier/prettier
+  294:21  warning  Delete `␍`  prettier/prettier
+  295:18  warning  Delete `␍`  prettier/prettier
+  296:23  warning  Delete `␍`  prettier/prettier
+  297:5   warning  Delete `␍`  prettier/prettier
+  298:1   warning  Delete `␍`  prettier/prettier
+  299:42  warning  Delete `␍`  prettier/prettier
+  300:80  warning  Delete `␍`  prettier/prettier
+  301:4   warning  Delete `␍`  prettier/prettier
+  302:19  warning  Delete `␍`  prettier/prettier
+  303:21  warning  Delete `␍`  prettier/prettier
+  304:24  warning  Delete `␍`  prettier/prettier
+  305:30  warning  Delete `␍`  prettier/prettier
+  306:5   warning  Delete `␍`  prettier/prettier
+  307:4   warning  Delete `␍`  prettier/prettier
+  308:24  warning  Delete `␍`  prettier/prettier
+  309:21  warning  Delete `␍`  prettier/prettier
+  310:19  warning  Delete `␍`  prettier/prettier
+  311:30  warning  Delete `␍`  prettier/prettier
+  312:5   warning  Delete `␍`  prettier/prettier
+  313:4   warning  Delete `␍`  prettier/prettier
+  314:32  warning  Delete `␍`  prettier/prettier
+  315:21  warning  Delete `␍`  prettier/prettier
+  316:22  warning  Delete `␍`  prettier/prettier
+  317:30  warning  Delete `␍`  prettier/prettier
+  318:5   warning  Delete `␍`  prettier/prettier
+  319:1   warning  Delete `␍`  prettier/prettier
+  320:33  warning  Delete `␍`  prettier/prettier
+  321:4   warning  Delete `␍`  prettier/prettier
+  322:29  warning  Delete `␍`  prettier/prettier
+  323:21  warning  Delete `␍`  prettier/prettier
+  324:24  warning  Delete `␍`  prettier/prettier
+  325:21  warning  Delete `␍`  prettier/prettier
+  326:5   warning  Delete `␍`  prettier/prettier
+  327:72  warning  Delete `␍`  prettier/prettier
+  328:73  warning  Delete `␍`  prettier/prettier
+  329:79  warning  Delete `␍`  prettier/prettier
+  330:1   warning  Delete `␍`  prettier/prettier
+  331:35  warning  Delete `␍`  prettier/prettier
+  332:80  warning  Delete `␍`  prettier/prettier
+  333:4   warning  Delete `␍`  prettier/prettier
+  334:34  warning  Delete `␍`  prettier/prettier
+  335:21  warning  Delete `␍`  prettier/prettier
+  336:21  warning  Delete `␍`  prettier/prettier
+  337:23  warning  Delete `␍`  prettier/prettier
+  338:5   warning  Delete `␍`  prettier/prettier
+  339:4   warning  Delete `␍`  prettier/prettier
+  340:33  warning  Delete `␍`  prettier/prettier
+  341:21  warning  Delete `␍`  prettier/prettier
+  342:20  warning  Delete `␍`  prettier/prettier
+  343:23  warning  Delete `␍`  prettier/prettier
+  344:5   warning  Delete `␍`  prettier/prettier
+  345:79  warning  Delete `␍`  prettier/prettier
+  346:4   warning  Delete `␍`  prettier/prettier
+  347:33  warning  Delete `␍`  prettier/prettier
+  348:21  warning  Delete `␍`  prettier/prettier
+  349:25  warning  Delete `␍`  prettier/prettier
+  350:23  warning  Delete `␍`  prettier/prettier
+  351:5   warning  Delete `␍`  prettier/prettier
+  352:4   warning  Delete `␍`  prettier/prettier
+  353:24  warning  Delete `␍`  prettier/prettier
+  354:21  warning  Delete `␍`  prettier/prettier
+  355:24  warning  Delete `␍`  prettier/prettier
+  356:23  warning  Delete `␍`  prettier/prettier
+  357:5   warning  Delete `␍`  prettier/prettier
+  358:1   warning  Delete `␍`  prettier/prettier
+  359:42  warning  Delete `␍`  prettier/prettier
+  360:4   warning  Delete `␍`  prettier/prettier
+  361:23  warning  Delete `␍`  prettier/prettier
+  362:21  warning  Delete `␍`  prettier/prettier
+  363:22  warning  Delete `␍`  prettier/prettier
+  364:30  warning  Delete `␍`  prettier/prettier
+  365:5   warning  Delete `␍`  prettier/prettier
+  366:4   warning  Delete `␍`  prettier/prettier
+  367:28  warning  Delete `␍`  prettier/prettier
+  368:21  warning  Delete `␍`  prettier/prettier
+  369:22  warning  Delete `␍`  prettier/prettier
+  370:30  warning  Delete `␍`  prettier/prettier
+  371:5   warning  Delete `␍`  prettier/prettier
+  372:4   warning  Delete `␍`  prettier/prettier
+  373:26  warning  Delete `␍`  prettier/prettier
+  374:21  warning  Delete `␍`  prettier/prettier
+  375:17  warning  Delete `␍`  prettier/prettier
+  376:30  warning  Delete `␍`  prettier/prettier
+  377:5   warning  Delete `␍`  prettier/prettier
+  378:4   warning  Delete `␍`  prettier/prettier
+  379:26  warning  Delete `␍`  prettier/prettier
+  380:21  warning  Delete `␍`  prettier/prettier
+  381:22  warning  Delete `␍`  prettier/prettier
+  382:30  warning  Delete `␍`  prettier/prettier
+  383:5   warning  Delete `␍`  prettier/prettier
+  384:1   warning  Delete `␍`  prettier/prettier
+  385:42  warning  Delete `␍`  prettier/prettier
+  386:4   warning  Delete `␍`  prettier/prettier
+  387:28  warning  Delete `␍`  prettier/prettier
+  388:21  warning  Delete `␍`  prettier/prettier
+  389:22  warning  Delete `␍`  prettier/prettier
+  390:30  warning  Delete `␍`  prettier/prettier
+  391:5   warning  Delete `␍`  prettier/prettier
+  392:4   warning  Delete `␍`  prettier/prettier
+  393:31  warning  Delete `␍`  prettier/prettier
+  394:21  warning  Delete `␍`  prettier/prettier
+  395:19  warning  Delete `␍`  prettier/prettier
+  396:30  warning  Delete `␍`  prettier/prettier
+  397:5   warning  Delete `␍`  prettier/prettier
+  398:4   warning  Delete `␍`  prettier/prettier
+  399:32  warning  Delete `␍`  prettier/prettier
+  400:21  warning  Delete `␍`  prettier/prettier
+  401:19  warning  Delete `␍`  prettier/prettier
+  402:30  warning  Delete `␍`  prettier/prettier
+  403:5   warning  Delete `␍`  prettier/prettier
+  404:79  warning  Delete `␍`  prettier/prettier
+  405:1   warning  Delete `␍`  prettier/prettier
+  406:39  warning  Delete `␍`  prettier/prettier
+  407:81  warning  Delete `␍`  prettier/prettier
+  408:79  warning  Delete `␍`  prettier/prettier
+  409:4   warning  Delete `␍`  prettier/prettier
+  410:32  warning  Delete `␍`  prettier/prettier
+  411:21  warning  Delete `␍`  prettier/prettier
+  412:30  warning  Delete `␍`  prettier/prettier
+  413:27  warning  Delete `␍`  prettier/prettier
+  414:5   warning  Delete `␍`  prettier/prettier
+  415:4   warning  Delete `␍`  prettier/prettier
+  416:37  warning  Delete `␍`  prettier/prettier
+  417:21  warning  Delete `␍`  prettier/prettier
+  418:20  warning  Delete `␍`  prettier/prettier
+  419:27  warning  Delete `␍`  prettier/prettier
+  420:5   warning  Delete `␍`  prettier/prettier
+  421:78  warning  Delete `␍`  prettier/prettier
+  422:4   warning  Delete `␍`  prettier/prettier
+  423:30  warning  Delete `␍`  prettier/prettier
+  424:21  warning  Delete `␍`  prettier/prettier
+  425:23  warning  Delete `␍`  prettier/prettier
+  426:27  warning  Delete `␍`  prettier/prettier
+  427:5   warning  Delete `␍`  prettier/prettier
+  428:1   warning  Delete `␍`  prettier/prettier
+  429:32  warning  Delete `␍`  prettier/prettier
+  430:78  warning  Delete `␍`  prettier/prettier
+  431:78  warning  Delete `␍`  prettier/prettier
+  432:75  warning  Delete `␍`  prettier/prettier
+  433:4   warning  Delete `␍`  prettier/prettier
+  434:31  warning  Delete `␍`  prettier/prettier
+  435:21  warning  Delete `␍`  prettier/prettier
+  436:28  warning  Delete `␍`  prettier/prettier
+  437:20  warning  Delete `␍`  prettier/prettier
+  438:5   warning  Delete `␍`  prettier/prettier
+  439:80  warning  Delete `␍`  prettier/prettier
+  440:80  warning  Delete `␍`  prettier/prettier
+  441:1   warning  Delete `␍`  prettier/prettier
+  442:45  warning  Delete `␍`  prettier/prettier
+  443:4   warning  Delete `␍`  prettier/prettier
+  444:31  warning  Delete `␍`  prettier/prettier
+  445:21  warning  Delete `␍`  prettier/prettier
+  446:21  warning  Delete `␍`  prettier/prettier
+  447:33  warning  Delete `␍`  prettier/prettier
+  448:5   warning  Delete `␍`  prettier/prettier
+  449:4   warning  Delete `␍`  prettier/prettier
+  450:33  warning  Delete `␍`  prettier/prettier
+  451:21  warning  Delete `␍`  prettier/prettier
+  452:25  warning  Delete `␍`  prettier/prettier
+  453:33  warning  Delete `␍`  prettier/prettier
+  454:5   warning  Delete `␍`  prettier/prettier
+  455:4   warning  Delete `␍`  prettier/prettier
+  456:37  warning  Delete `␍`  prettier/prettier
+  457:21  warning  Delete `␍`  prettier/prettier
+  458:18  warning  Delete `␍`  prettier/prettier
+  459:33  warning  Delete `␍`  prettier/prettier
+  460:5   warning  Delete `␍`  prettier/prettier
+  461:4   warning  Delete `␍`  prettier/prettier
+  462:30  warning  Delete `␍`  prettier/prettier
+  463:21  warning  Delete `␍`  prettier/prettier
+  464:22  warning  Delete `␍`  prettier/prettier
+  465:33  warning  Delete `␍`  prettier/prettier
+  466:5   warning  Delete `␍`  prettier/prettier
+  467:1   warning  Delete `␍`  prettier/prettier
+  468:34  warning  Delete `␍`  prettier/prettier
+  469:4   warning  Delete `␍`  prettier/prettier
+  470:30  warning  Delete `␍`  prettier/prettier
+  471:21  warning  Delete `␍`  prettier/prettier
+  472:23  warning  Delete `␍`  prettier/prettier
+  473:22  warning  Delete `␍`  prettier/prettier
+  474:5   warning  Delete `␍`  prettier/prettier
+  475:4   warning  Delete `␍`  prettier/prettier
+  476:33  warning  Delete `␍`  prettier/prettier
+  477:21  warning  Delete `␍`  prettier/prettier
+  478:18  warning  Delete `␍`  prettier/prettier
+  479:22  warning  Delete `␍`  prettier/prettier
+  480:5   warning  Delete `␍`  prettier/prettier
+  481:4   warning  Delete `␍`  prettier/prettier
+  482:32  warning  Delete `␍`  prettier/prettier
+  483:21  warning  Delete `␍`  prettier/prettier
+  484:17  warning  Delete `␍`  prettier/prettier
+  485:22  warning  Delete `␍`  prettier/prettier
+  486:5   warning  Delete `␍`  prettier/prettier
+  487:1   warning  Delete `␍`  prettier/prettier
+  488:34  warning  Delete `␍`  prettier/prettier
+  489:73  warning  Delete `␍`  prettier/prettier
+  490:4   warning  Delete `␍`  prettier/prettier
+  491:33  warning  Delete `␍`  prettier/prettier
+  492:21  warning  Delete `␍`  prettier/prettier
+  493:23  warning  Delete `␍`  prettier/prettier
+  494:22  warning  Delete `␍`  prettier/prettier
+  495:5   warning  Delete `␍`  prettier/prettier
+  496:80  warning  Delete `␍`  prettier/prettier
+  497:3   warning  Delete `␍`  prettier/prettier
+F:\pet-projects\assistant\src\pages\dashboard\finance\add-category-modal.tsx
+   10:3   error    'ChevronRight' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   11:3   error    'ChevronLeft' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   16:18  error    'AnimatePresence' is defined but never used                                                                       @typescript-eslint/no-unused-vars
+  112:38  warning  Replace `categoryToEdit?.color·||·CATEGORY_COLORS[0]` with `⏎····categoryToEdit?.color·||·CATEGORY_COLORS[0]⏎··`  prettier/prettier
+  126:24  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+F:\pet-projects\assistant\src\pages\dashboard\finance\add-transaction-form.tsx
+  130:10  error    'justScanned' is assigned a value but never used                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  190:38  warning  Replace `e:·React.ChangeEvent<HTMLInputElement>` with `⏎····e:·React.ChangeEvent<HTMLInputElement>⏎··`                                                                                                                                                     prettier/prettier
+  203:52  error    Unexpected any. Specify a different type                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  414:43  warning  Replace `·?·"Выбор·категории"` with `⏎························?·"Выбор·категории"⏎·······················`                                                                                                                                                 prettier/prettier
+  482:46  warning  Replace `·duration:·0.32,·ease:·"easeInOut"` with `⏎··································duration:·0.32,⏎··································ease:·"easeInOut",⏎·······························`                                                                prettier/prettier
+  514:48  warning  Replace `·duration:·0.32,·ease:·"easeInOut"` with `⏎····································duration:·0.32,⏎····································ease:·"easeInOut",⏎·································`                                                          prettier/prettier
+  523:45  warning  Insert `{"·"}⏎·····································`                                                                                                                                                                                                       prettier/prettier
+  531:51  warning  Replace `·opacity:·0,·scale:·0.98,·y:·10` with `⏎··········································opacity:·0,⏎··········································scale:·0.98,⏎··········································y:·10,⏎·······································`    prettier/prettier
+  533:48  warning  Replace `·opacity:·0,·scale:·0.98,·y:·-10` with `⏎··········································opacity:·0,⏎··········································scale:·0.98,⏎··········································y:·-10,⏎·······································`  prettier/prettier
+  682:74  warning  Delete `.category`                                                                                                                                                                                                                                         prettier/prettier
+  683:51  warning  Insert `.category`                                                                                                                                                                                                                                         prettier/prettier
+  702:70  warning  Insert `⏎···········································`                                                                                                                                                                                                      prettier/prettier
+  716:52  warning  Replace `items[0].id,·"description",·v` with `⏎··········································items[0].id,⏎··········································"description",⏎··········································v⏎········································`       prettier/prettier
+  755:81  warning  Insert `⏎················································`                                                                                                                                                                                                 prettier/prettier
+  774:68  warning  Insert `⏎·········································`                                                                                                                                                                                                        prettier/prettier
+F:\pet-projects\assistant\src\pages\dashboard\finance\index.tsx
+  73:6  warning  React Hook useEffect has a missing dependency: 'categories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+F:\pet-projects\assistant\src\pages\dashboard\finance\tabs\analytics-tab.tsx
+    9:3   error    'ChevronDown' is defined but never used                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   25:3   error    'subMonths' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   26:3   error    'isWithinInterval' is defined but never used                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   27:3   error    'parseISO' is defined but never used                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   29:10  error    'ru' is defined but never used                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   79:31  error    'isLoading' is assigned a value but never used                                                                                                                                                                @typescript-eslint/no-unused-vars
+  180:27  error    Unexpected any. Specify a different type                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  238:16  warning  Replace `(income·>·expense·?·"В·плюсе"·:·"В·минусе")` with `income·>·expense·?·"В·плюсе"·:·"В·минусе"`                                                                                                        prettier/prettier
+  302:48  error    Unexpected constant truthiness on the left-hand side of a `||` expression                                                                                                                                     no-constant-binary-expression
+  306:43  warning  Replace `·name={cat.icon·||·"Package"}·className="h-5·w-5"` with `⏎······························name={cat.icon·||·"Package"}⏎······························className="h-5·w-5"⏎···························`  prettier/prettier
+  360:74  warning  Replace `·выросли` with `{"·"}`                                                                                                                                                                               prettier/prettier
+  361:18  warning  Insert `·выросли`                                                                                                                                                                                             prettier/prettier
+F:\pet-projects\assistant\src\pages\dashboard\finance\tabs\categories-tab.tsx
+  123:18  warning  Replace `·?·"bg-card/10·ml-6·min-h-[72px]"` with `⏎··············?·"bg-card/10·ml-6·min-h-[72px]"⏎·············`  prettier/prettier
+F:\pet-projects\assistant\src\pages\dashboard\finance\transaction-list.tsx
+   25:16  warning  Replace `⏎······layout="position"⏎······className="sticky·top-0·z-10·pt-1·pb-2"⏎····` with `·layout="position"·className="sticky·top-0·z-10·pt-1·pb-2"`  prettier/prettier
+  290:48  warning  Insert `⏎··············`                                                                                                                                 prettier/prettier
+  291:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  292:17  warning  Insert `··`                                                                                                                                              prettier/prettier
+  293:17  warning  Insert `··`                                                                                                                                              prettier/prettier
+  294:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  295:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  296:17  warning  Insert `··`                                                                                                                                              prettier/prettier
+  297:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  298:19  warning  Insert `··`                                                                                                                                              prettier/prettier
+  299:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  300:21  warning  Insert `··`                                                                                                                                              prettier/prettier
+  301:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  302:21  warning  Insert `··`                                                                                                                                              prettier/prettier
+  303:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  304:17  warning  Insert `··`                                                                                                                                              prettier/prettier
+  305:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  306:15  warning  Insert `··`                                                                                                                                              prettier/prettier
+  307:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  308:17  warning  Insert `··`                                                                                                                                              prettier/prettier
+  309:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  310:21  warning  Insert `··`                                                                                                                                              prettier/prettier
+  311:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  312:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  313:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  314:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  315:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  316:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  317:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  318:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  319:27  warning  Insert `··`                                                                                                                                              prettier/prettier
+  320:1   warning  Replace `··························` with `····························`                                                                                 prettier/prettier
+  321:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  322:1   warning  Replace `························` with `··························`                                                                                     prettier/prettier
+  323:27  warning  Insert `··`                                                                                                                                              prettier/prettier
+  324:1   warning  Replace `····························` with `······························`                                                                             prettier/prettier
+  325:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  326:29  warning  Insert `··`                                                                                                                                              prettier/prettier
+  327:27  warning  Insert `··`                                                                                                                                              prettier/prettier
+  328:1   warning  Replace `··························` with `····························`                                                                                 prettier/prettier
+  329:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  330:1   warning  Replace `······················` with `························`                                                                                         prettier/prettier
+  331:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  332:1   warning  Replace `··························` with `····························`                                                                                 prettier/prettier
+  333:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  334:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  335:25  warning  Insert `··`                                                                                                                                              prettier/prettier
+  336:1   warning  Replace `······················` with `························`                                                                                         prettier/prettier
+  337:21  warning  Insert `··`                                                                                                                                              prettier/prettier
+  338:1   warning  Insert `··`                                                                                                                                              prettier/prettier
+  339:17  warning  Insert `··`                                                                                                                                              prettier/prettier
+  340:1   warning  Replace `··············` with `················`                                                                                                         prettier/prettier
+  341:13  warning  Replace `)` with `··)⏎············`                                                                                                                      prettier/prettier
+F:\pet-projects\assistant\src\providers\theme-provider.tsx
+  96:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+✖ 603 problems (21 errors, 582 warnings)
+  0 errors and 577 warnings potentially fixable with the `--fix` option.
+ ELIFECYCLE  Command failed with exit code 1.

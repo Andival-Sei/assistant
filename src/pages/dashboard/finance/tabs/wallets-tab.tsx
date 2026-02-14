@@ -16,6 +16,8 @@ import { AddWalletModal } from "../add-wallet-modal";
 import { AnimatePresence, motion } from "framer-motion";
 import { Wallet } from "@/types/finance";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export function WalletsTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -40,7 +42,7 @@ export function WalletsTab() {
       setActiveMenuId(null);
     },
     onError: (error) => {
-      alert(
+      toast.error(
         `Ошибка при удалении: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`
       );
     },
@@ -87,7 +89,19 @@ export function WalletsTab() {
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
+            <div
+              key={i}
+              className="h-44 rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl flex flex-col justify-between"
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                </div>
+                <Skeleton className="h-10 w-10 rounded-xl" />
+              </div>
+              <Skeleton className="h-4 w-20" />
+            </div>
           ))}
         </div>
       ) : (

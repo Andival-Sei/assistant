@@ -58,6 +58,7 @@ export function Popover({ children, open, onOpenChange }: PopoverProps) {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   return (
@@ -89,10 +90,13 @@ export function PopoverTrigger({
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<any>, {
+    // Используем Object.assign для добавления ref и onClick без проблем типизации
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const childElement = React.cloneElement(children as any, {
       ref: triggerRef,
       onClick: handleClick,
     });
+    return childElement;
   }
 
   return (
@@ -148,7 +152,11 @@ export function PopoverContent({
 
   // Подгоняем left/top так, чтобы попап не выходил за viewport
   const applyViewportClamp = useCallback(
-    (pos: { top: number; left: number; width: number }, contentW: number, contentH: number) => {
+    (
+      pos: { top: number; left: number; width: number },
+      contentW: number,
+      contentH: number
+    ) => {
       let { top, left } = pos;
       const w = contentW;
       const h = contentH;
@@ -166,7 +174,8 @@ export function PopoverContent({
           left = window.innerWidth - PAD - w;
         if (left < PAD) left = PAD;
       }
-      if (top + h > window.innerHeight - PAD) top = window.innerHeight - PAD - h;
+      if (top + h > window.innerHeight - PAD)
+        top = window.innerHeight - PAD - h;
       if (top < PAD) top = PAD;
       return { ...pos, left, top };
     },
@@ -200,10 +209,7 @@ export function PopoverContent({
       const h = r.height;
       if (w <= 0 || h <= 0) return;
       const clamped = applyViewportClamp(position, w, h);
-      if (
-        clamped.left !== position.left ||
-        clamped.top !== position.top
-      ) {
+      if (clamped.left !== position.left || clamped.top !== position.top) {
         setPosition(clamped);
       }
     };
@@ -226,7 +232,7 @@ export function PopoverContent({
       cancelAnimationFrame(t0);
       window.clearTimeout(t1);
     };
-  }, [isOpen, position, applyViewportClamp]);
+  }, [isOpen, position, applyViewportClamp, contentRef]);
 
   if (!isOpen || !position) return null;
 

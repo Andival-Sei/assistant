@@ -207,3 +207,41 @@ html {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Sonner Toast Customization */
+[data-sonner-toast] {
+  backdrop-filter: blur(12px);
+  border-radius: 1.25rem !important;
+  font-family: inherit !important;
+  border-width: 1px !important;
+}
+
+[data-sonner-toast][data-rich-colors="true"][data-type="success"] {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  color: #059669 !important;
+}
+
+[data-sonner-toast][data-rich-colors="true"][data-type="error"] {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  color: #dc2626 !important;
+}
+
+.dark [data-sonner-toast][data-rich-colors="true"][data-type="success"] {
+  background: rgba(0, 220, 130, 0.1) !important;
+  border-color: rgba(0, 220, 130, 0.2) !important;
+  color: #00dc82 !important;
+}
+
+.dark [data-sonner-toast][data-rich-colors="true"][data-type="error"] {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #fca5a5 !important;
+}
+
+.dark [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]) {
+  background: rgba(24, 24, 27, 0.8) !important;
+  border-color: rgba(39, 39, 42, 0.8) !important;
+  color: #fafafa !important;
+}

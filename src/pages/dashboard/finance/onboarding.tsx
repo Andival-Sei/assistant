@@ -6,6 +6,7 @@ import { ArrowRight, Wallet, Check, ChevronLeft } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { financeService } from "@/lib/services/finance-service";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const currencies = [
   { code: "RUB", symbol: "₽", name: "Российский рубль" },
@@ -33,7 +34,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     },
     onError: (error) => {
       console.error("Failed to create wallet:", error);
-      alert("Ошибка при создании счета: " + error.message);
+      toast.error("Ошибка при создании счета: " + error.message);
     },
   });
 

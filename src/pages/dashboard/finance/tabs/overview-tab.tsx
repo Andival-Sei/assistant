@@ -13,7 +13,7 @@ export function OverviewTab() {
 
   const { data: transactions } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => financeService.getTransactions(100),
+    queryFn: () => financeService.getTransactions({ limit: 100 }),
   });
 
   const totalBalance =
