@@ -24,10 +24,7 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     if (!isOpen) return;
 
     const videoElement = videoRef.current;
-    const handlersRef = {
-      onLoadedMetadata: null as (() => void) | null,
-      onCanPlay: null as (() => void) | null,
-    };
+    if (!videoElement) return;
 
     const initCamera = async () => {
       try {
@@ -55,75 +52,25 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         // Остановить предыдущий поток
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
         }
 
+        // Запросить видео поток
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
           },
           audio: false,
         });
 
-        if (videoElement) {
-          console.log("Setting video stream...");
+        // Установить поток в ref и state
+        streamRef.current = mediaStream;
+        setStream(mediaStream);
+
+        // Установить поток на видео элемент ТОЛЬКО если её ещё нет
+        if (videoElement.srcObject !== mediaStream && !videoElement.srcObject) {
           videoElement.srcObject = mediaStream;
-          videoElement.muted = true; // Убедитесь что видео отключено
-          streamRef.current = mediaStream;
-          setStream(mediaStream);
-
-          // Функция воспроизведения видео
-          const attemptPlay = async () => {
-            try {
-              console.log("Attempting to play video...");
-              const playPromise = videoElement.play();
-              if (playPromise !== undefined) {
-                await playPromise;
-              }
-              console.log("Video playing successfully");
-              setIsLoading(false);
-            } catch (playErr) {
-              console.error("Play error:", playErr);
-              setError("Не удалось запустить видеопоток");
-              setIsLoading(false);
-            }
-          };
-
-          // Слушаем событие loadedmetadata - это более надёжный способ
-          handlersRef.onLoadedMetadata = () => {
-            console.log("Metadata loaded");
-            attemptPlay();
-            if (handlersRef.onLoadedMetadata) {
-              videoElement.removeEventListener(
-                "loadedmetadata",
-                handlersRef.onLoadedMetadata
-              );
-            }
-          };
-
-          // Также слушаем canplay для дополнительной гарантии
-          handlersRef.onCanPlay = () => {
-            console.log("Video can play");
-            attemptPlay();
-            if (handlersRef.onCanPlay) {
-              videoElement.removeEventListener(
-                "canplay",
-                handlersRef.onCanPlay
-              );
-            }
-          };
-
-          videoElement.addEventListener(
-            "loadedmetadata",
-            handlersRef.onLoadedMetadata
-          );
-          videoElement.addEventListener("canplay", handlersRef.onCanPlay);
-
-          // Если метаданные уже загружены, пытаемся воспроизвести немедленно
-          if (videoElement.readyState >= 2) {
-            attemptPlay();
-          }
+          console.log("Stream set to video element");
         }
       } catch (err) {
         let errorMessage = "Не удалось получить доступ к камере";
@@ -174,23 +121,16 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
     // Очистка при закрытии
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        setStream(null);
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+          console.log("Track stopped:", track.kind);
+        });
         streamRef.current = null;
       }
       if (videoElement) {
         videoElement.srcObject = null;
-        // Удаляем все обработчики событий
-        if (handlersRef.onLoadedMetadata) {
-          videoElement.removeEventListener(
-            "loadedmetadata",
-            handlersRef.onLoadedMetadata
-          );
-        }
-        if (handlersRef.onCanPlay) {
-          videoElement.removeEventListener("canplay", handlersRef.onCanPlay);
-        }
       }
+      setStream(null);
     };
   }, [isOpen, facingMode]);
 
@@ -248,6 +188,25 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
       setError(
         `Ошибка при захвате: ${err instanceof Error ? err.message : "неизвестная ошибка"}`
       );
+    }
+  };
+
+  const handleVideoCanPlay = async () => {
+    console.log(
+      "Video can play, videoWidth:",
+      videoRef.current?.videoWidth,
+      "videoHeight:",
+      videoRef.current?.videoHeight
+    );
+    if (videoRef.current) {
+      try {
+        await videoRef.current.play();
+        console.log("Video started playing");
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Play error:", err);
+        setError("Не удалось запустить видеопоток");
+      }
     }
   };
 
@@ -351,9 +310,11 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
             <>
               <video
                 ref={videoRef}
-                muted
+                autoPlay
                 playsInline
+                muted
                 disablePictureInPicture
+                onCanPlay={handleVideoCanPlay}
                 className="w-full h-full object-cover bg-black"
                 style={{
                   transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
