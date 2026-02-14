@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Wallet,
+  HeartPulse,
   CheckSquare,
   Settings,
   ChevronLeft,
@@ -68,6 +69,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Обзор" },
     { to: "/dashboard/finance", icon: Wallet, label: "Финансы" },
+    { to: "/dashboard/health", icon: HeartPulse, label: "Здоровье" },
     { to: "/dashboard/tasks", icon: CheckSquare, label: "Задачи" },
     { to: "/dashboard/settings", icon: Settings, label: "Настройки" },
   ];

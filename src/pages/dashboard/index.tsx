@@ -321,41 +321,43 @@ export function DashboardPage() {
 
           {/* Health Status Dashboard */}
           <FadeIn delay={0.45} direction="up" distance={16}>
-            <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm">
-              <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-rose-500" />
-                  <h3 className="font-bold text-foreground">Здоровье</h3>
+            <Link to="/dashboard/health" className="block">
+              <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm transition-all hover:shadow-md hover:border-primary/30">
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-rose-500" />
+                    <h3 className="font-bold text-foreground">Здоровье</h3>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
+                    No Data
+                  </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
-                  No Data
-                </span>
-              </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Активность</span>
-                    <span className="font-medium">0%</span>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Активность</span>
+                      <span className="font-medium">0%</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-0 bg-rose-500 rounded-full" />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                    <div className="h-full w-0 bg-rose-500 rounded-full" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Сон</span>
+                      <span className="font-medium">--ч --м</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-0 bg-blue-500 rounded-full" />
+                    </div>
                   </div>
+                  <p className="text-[11px] text-center text-muted-foreground pt-2">
+                    Подключите устройства или начните с ручного ввода
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Сон</span>
-                    <span className="font-medium">--ч --м</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                    <div className="h-full w-0 bg-blue-500 rounded-full" />
-                  </div>
-                </div>
-                <p className="text-[11px] text-center text-muted-foreground pt-2">
-                  Подключите Apple Health или Google Fit для анализа
-                </p>
               </div>
-            </div>
+            </Link>
           </FadeIn>
         </aside>
       </div>
