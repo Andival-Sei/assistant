@@ -214,7 +214,7 @@ export function CategoryPicker({
             <AnimatePresence mode="popLayout" initial={false}>
               {filteredCategories.map((cat) => {
                 const hasChildren =
-                  !search && categories.some((c) => c.parent_id === cat.id);
+                  !search && categories?.some((c) => c.parent_id === cat.id);
                 return (
                   <motion.button
                     type="button"

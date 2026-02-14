@@ -161,8 +161,8 @@ export function CalendarModal({
                 showOutsideDays
                 hideNavigation
                 components={{
-                  Caption: () => null,
-                  Nav: () => null,
+                  MonthCaption: () => <></>,
+                  Nav: () => <></>,
                 }}
                 className="p-0"
                 classNames={{

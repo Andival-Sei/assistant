@@ -89,7 +89,7 @@ export function PopoverTrigger({
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement, {
+    return React.cloneElement(children as React.ReactElement<any>, {
       ref: triggerRef,
       onClick: handleClick,
     });
