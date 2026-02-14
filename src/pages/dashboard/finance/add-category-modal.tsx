@@ -346,7 +346,7 @@ export function AddCategoryModal({
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 max-h-[200px] overflow-y-auto p-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+              <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 max-h-50 overflow-y-auto p-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
                 {filteredIcons.map((iconName) => (
                   <button
                     key={iconName}
@@ -379,7 +379,7 @@ export function AddCategoryModal({
           <Button
             onClick={handleSubmit}
             disabled={!name || mutation.isPending}
-            className="flex-[2] rounded-xl h-12 shadow-lg shadow-primary/20"
+            className="flex-2 rounded-xl h-12 shadow-lg shadow-primary/20"
           >
             {mutation.isPending ? (
               <div className="flex items-center gap-2">

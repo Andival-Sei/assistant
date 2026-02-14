@@ -350,7 +350,7 @@ export function AnalyticsTab() {
         </section>
 
         <section className="lg:col-span-4 space-y-6">
-          <div className="bg-gradient-to-br from-primary/10 to-transparent p-8 rounded-3xl border border-primary/20 backdrop-blur-xl h-full flex flex-col">
+          <div className="bg-linear-to-br from-primary/10 to-transparent p-8 rounded-3xl border border-primary/20 backdrop-blur-xl h-full flex flex-col">
             <h3 className="text-xl font-black mb-4 flex items-center gap-2">
               <Target className="w-5 h-5" />
               Инсайты
