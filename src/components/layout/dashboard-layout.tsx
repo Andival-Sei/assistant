@@ -82,7 +82,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "hidden md:flex relative flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl transition-all duration-300 ease-in-out z-30",
-          isCollapsed ? "w-[80px]" : "w-[260px]"
+          isCollapsed ? "w-20" : "w-65"
         )}
       >
         {/* Sidebar Header */}
@@ -170,7 +170,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="fixed left-0 top-0 z-40 h-screen w-[260px] flex flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl md:hidden"
+              className="fixed left-0 top-0 z-40 h-screen w-65 flex flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl md:hidden"
             >
               {/* Mobile Sidebar Header */}
               <div className="flex h-20 items-center justify-between px-6">

@@ -78,9 +78,9 @@ const ScanningOverlay = () => (
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    className="absolute inset-0 z-[100] bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
+    className="absolute inset-0 z-100 bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
   >
-    <div className="relative h-32 w-full max-w-[280px] overflow-hidden rounded-2xl border bg-card shadow-2xl flex flex-col items-center justify-center gap-3">
+    <div className="relative h-32 w-full max-w-70 overflow-hidden rounded-2xl border bg-card shadow-2xl flex flex-col items-center justify-center gap-3">
       {/* Laser line animation */}
       <motion.div
         className="absolute inset-x-0 h-1 bg-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.8)] z-10"
@@ -273,8 +273,7 @@ export function AddTransactionForm({
           }) => {
             const suggestedCategory = categories?.find(
               (c) =>
-                c.name.toLowerCase() ===
-                item.category_suggestion?.toLowerCase()
+                c.name.toLowerCase() === item.category_suggestion?.toLowerCase()
             );
             return {
               id: crypto.randomUUID(),
@@ -473,7 +472,7 @@ export function AddTransactionForm({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 16 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
-              className="w-full mx-4 max-w-lg max-h-[85vh] sm:max-h-[80vh] sm:mx-0 min-h-[500px] sm:min-h-[560px] bg-card border border-border rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden flex flex-col relative"
+              className="w-full mx-4 max-w-lg max-h-[85vh] sm:max-h-[80vh] sm:mx-0 min-h-125 sm:min-h-140 bg-card border border-border rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden flex flex-col relative"
             >
               <ErrorBoundary>
                 <div className="flex items-center justify-between p-4 border-b bg-muted/30 shrink-0 z-10 relative">
@@ -601,7 +600,7 @@ export function AddTransactionForm({
                                     </span>
                                   </div>
 
-                                  <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+                                  <div className="space-y-3 max-h-65 overflow-y-auto pr-1">
                                     {items.map((item, index) => (
                                       <motion.div
                                         key={item.id}
@@ -783,7 +782,7 @@ export function AddTransactionForm({
                                         <span className="text-xs text-muted-foreground">
                                           Категория
                                         </span>
-                                        <p className="font-medium text-sm truncate max-w-[200px]">
+                                        <p className="font-medium text-sm truncate max-w-50">
                                           {items[0].category?.name ??
                                             "Не выбрана"}
                                         </p>
@@ -936,7 +935,7 @@ export function AddTransactionForm({
                                 ) : receipt ? (
                                   <div className="flex items-center gap-2 text-primary">
                                     <Check className="h-4 w-4" />
-                                    <span className="text-xs font-medium truncate max-w-[100px]">
+                                    <span className="text-xs font-medium truncate max-w-25">
                                       {receipt.name}
                                     </span>
                                   </div>

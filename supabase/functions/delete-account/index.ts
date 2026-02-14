@@ -74,7 +74,10 @@ Deno.serve(async (req: Request) => {
 
     if (deleteError) {
       return new Response(
-        JSON.stringify({ error: "Delete failed", details: deleteError.message }),
+        JSON.stringify({
+          error: "Delete failed",
+          details: deleteError.message,
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

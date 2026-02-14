@@ -12,6 +12,7 @@ interface CameraModalProps {
 export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">(
     "environment"
@@ -19,7 +20,6 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Инициализация камеры
   useEffect(() => {
     if (!isOpen) return;
 
@@ -40,10 +40,13 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
           setStream(mediaStream);
+          streamRef.current = mediaStream;
         }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Не удалось получить доступ к камере";
+          err instanceof Error
+            ? err.message
+            : "Не удалось получить доступ к камере";
         setError(errorMessage);
         console.error("Camera error:", err);
       } finally {
@@ -55,9 +58,10 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
 
     // Очистка при закрытии
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
         setStream(null);
+        streamRef.current = null;
       }
     };
   }, [isOpen, facingMode]);
@@ -152,7 +156,9 @@ export function CameraModal({ isOpen, onCapture, onClose }: CameraModalProps) {
                 autoPlay
                 playsInline
                 className="w-full h-full object-cover"
-                style={{ transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)" }}
+                style={{
+                  transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
+                }}
               />
               {/* Сетка для выравнивания */}
               <div className="absolute inset-0 pointer-events-none opacity-20">
