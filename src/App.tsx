@@ -11,6 +11,7 @@ import { TasksPage } from "@/pages/dashboard/tasks";
 import { SettingsPage } from "@/pages/dashboard/settings";
 import { Toaster } from "sonner";
 import { useTheme } from "@/providers/theme-provider";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   const { theme } = useTheme();
@@ -60,6 +61,7 @@ function App() {
         richColors
         theme={theme as "light" | "dark" | "system"}
       />
+      <SpeedInsights />
     </>
   );
 }
