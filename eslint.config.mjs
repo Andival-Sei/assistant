@@ -9,7 +9,13 @@ import prettierPlugin from "eslint-plugin-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "reference", "**/node_modules", "supabase/functions/**"],
+    ignores: [
+      "dist",
+      "dev-dist",
+      "reference",
+      "**/node_modules",
+      "supabase/functions/**",
+    ],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

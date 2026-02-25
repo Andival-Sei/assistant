@@ -14,9 +14,12 @@ import { PrivacyPage } from "@/pages/legal/privacy";
 import { Toaster } from "sonner";
 import { useTheme } from "@/providers/theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { usePwaRegistration } from "@/lib/pwa";
+import { PwaUpdateBanner } from "@/components/pwa-update-banner";
 
 function App() {
   const { theme } = useTheme();
+  const { needRefresh, updateServiceWorker } = usePwaRegistration();
 
   return (
     <>
@@ -43,6 +46,7 @@ function App() {
           }
         />
       </Routes>
+      <PwaUpdateBanner open={needRefresh} onUpdate={updateServiceWorker} />
       <Toaster
         position="top-center"
         richColors

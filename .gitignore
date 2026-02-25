@@ -4,7 +4,13 @@ node_modules
 # Build
 dist
 dist-ssr
+dev-dist
 *.local
+# Android app (on hold)
+android/
+android/.gradle
+android/**/build
+android/local.properties
 
 # Logs
 logs
