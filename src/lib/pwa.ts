@@ -15,6 +15,10 @@ export type PushSupportState = {
 
 function toHumanPushError(error: unknown): string {
   if (error instanceof DOMException) {
+    if (error.name === "InvalidAccessError") {
+      return "Некорректный VAPID-ключ для push (проверьте VITE_VAPID_PUBLIC_KEY на деплое).";
+    }
+
     if (error.name === "NotAllowedError") {
       return "Браузер заблокировал push-подписку. Проверьте разрешение на уведомления для сайта.";
     }
@@ -26,6 +30,8 @@ function toHumanPushError(error: unknown): string {
     if (error.name === "InvalidStateError") {
       return "Сервис-воркер ещё не готов для push. Обновите страницу и повторите.";
     }
+
+    return `Ошибка push в браузере: ${error.name}.`;
   }
 
   if (error instanceof Error) {
@@ -37,6 +43,11 @@ function toHumanPushError(error: unknown): string {
   }
 
   return "Не удалось включить push-уведомления.";
+}
+
+function normalizeVapidPublicKey(rawKey: string): string {
+  // На деплое ключ иногда добавляют с кавычками в env.
+  return rawKey.trim().replace(/^['"]|['"]$/g, "");
 }
 
 export function getPushSupportState(): PushSupportState {
@@ -110,7 +121,10 @@ export async function subscribeToPush(): Promise<PushSubscription> {
     );
   }
 
-  const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
+  const vapidPublicKeyRaw = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  const vapidPublicKey = vapidPublicKeyRaw
+    ? normalizeVapidPublicKey(vapidPublicKeyRaw)
+    : "";
   if (!vapidPublicKey) {
     throw new Error("VITE_VAPID_PUBLIC_KEY не задан");
   }
@@ -127,8 +141,13 @@ export async function subscribeToPush(): Promise<PushSubscription> {
   let applicationServerKey: Uint8Array;
   try {
     applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+    if (applicationServerKey.length !== 65) {
+      throw new Error("bad_key_length");
+    }
   } catch {
-    throw new Error("Некорректный формат VITE_VAPID_PUBLIC_KEY");
+    throw new Error(
+      "Некорректный формат VITE_VAPID_PUBLIC_KEY (ожидается публичный VAPID ключ без кавычек)"
+    );
   }
 
   try {
