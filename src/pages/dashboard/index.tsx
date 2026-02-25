@@ -7,6 +7,7 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
+  ArrowRightLeft,
   Clock,
   CheckCircle2,
   Activity,
@@ -19,6 +20,25 @@ import { ru } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+
+function normalizeTransactionLabel(
+  description: string | null | undefined,
+  type: string
+) {
+  const raw = (description || "").trim();
+  const mapType = (value: string) => {
+    if (value === "income") return "Пополнение";
+    if (value === "expense") return "Расход";
+    if (value === "transfer") return "Перевод";
+    return null;
+  };
+
+  if (raw) {
+    return mapType(raw.toLowerCase()) || raw;
+  }
+
+  return mapType(type.toLowerCase()) || "Операция";
+}
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -58,6 +78,16 @@ export function DashboardPage() {
     );
   }, [transactions]);
 
+  const monthExpenseSharePercent = useMemo(() => {
+    if (!totalBalance || totalBalance <= 0) {
+      return null;
+    }
+    if (!monthStats.expense || monthStats.expense <= 0) {
+      return 0;
+    }
+    return Math.round((monthStats.expense / totalBalance) * 100);
+  }, [monthStats.expense, totalBalance]);
+
   const recentTransactions = transactions?.slice(0, 5) || [];
 
   return (
@@ -90,21 +120,21 @@ export function DashboardPage() {
       </FadeIn>
 
       {/* Quick Metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <FadeIn delay={0.1} direction="up" distance={14}>
-          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-primary/5">
+          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-primary/5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
-                <Wallet className="h-5 w-5" />
+                <Wallet className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                 Баланс
               </span>
             </div>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-xl font-bold text-foreground sm:text-2xl">
               {totalBalance.toLocaleString("ru-RU")} ₽
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="mt-2 hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Все счета активны
             </div>
@@ -112,57 +142,61 @@ export function DashboardPage() {
         </FadeIn>
 
         <FadeIn delay={0.15} direction="up" distance={14}>
-          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-emerald-500/5">
+          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-emerald-500/5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600">
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                 Доход мес.
               </span>
             </div>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-xl font-bold text-foreground sm:text-2xl">
               {monthStats.income.toLocaleString("ru-RU")} ₽
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className="mt-2 hidden text-xs text-muted-foreground sm:block">
               За текущий месяц
             </div>
           </div>
         </FadeIn>
 
         <FadeIn delay={0.2} direction="up" distance={14}>
-          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-rose-500/5">
+          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-rose-500/5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="rounded-xl bg-rose-500/10 p-2 text-rose-600">
-                <TrendingDown className="h-5 w-5" />
+                <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                 Расход мес.
               </span>
             </div>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-xl font-bold text-foreground sm:text-2xl">
               {monthStats.expense.toLocaleString("ru-RU")} ₽
             </div>
-            <div className="mt-2 text-xs text-rose-500/80">
-              {monthStats.expense > 0
-                ? `-${Math.round((monthStats.expense / totalBalance || 0) * 100)}% от баланса`
-                : "Трат нет"}
+            <div className="mt-2 hidden text-xs text-rose-500/80 sm:block">
+              {monthStats.expense > 0 && monthExpenseSharePercent !== null
+                ? `-${monthExpenseSharePercent}% от баланса`
+                : monthStats.expense > 0 && monthExpenseSharePercent === null
+                  ? "Баланс пока 0 ₽"
+                  : "Трат нет"}
             </div>
           </div>
         </FadeIn>
 
         <FadeIn delay={0.25} direction="up" distance={14}>
-          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-orange-500/5">
+          <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-xl transition-all hover:shadow-lg hover:shadow-orange-500/5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="rounded-xl bg-orange-500/10 p-2 text-orange-600">
-                <CheckCircle2 className="h-5 w-5" />
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                 Задачи
               </span>
             </div>
-            <div className="text-2xl font-bold text-foreground">0 / 0</div>
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className="text-xl font-bold text-foreground sm:text-2xl">
+              0 / 0
+            </div>
+            <div className="mt-2 hidden text-xs text-muted-foreground sm:block">
               Все цели достигнуты
             </div>
           </div>
@@ -174,8 +208,8 @@ export function DashboardPage() {
         <div className="space-y-6">
           {/* Recent Activity */}
           <FadeIn delay={0.3} direction="up" distance={16}>
-            <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm">
-              <div className="mb-6 flex items-center justify-between">
+            <div>
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary" />
                   <h3 className="font-bold text-foreground">
@@ -191,11 +225,11 @@ export function DashboardPage() {
               </div>
 
               {recentTransactions.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {recentTransactions.map((tx) => (
                     <div
                       key={tx.id}
-                      className="group flex items-center justify-between rounded-xl border border-transparent p-2 transition-all hover:bg-accent/40 hover:border-border/50"
+                      className="group flex items-center justify-between rounded-2xl border border-border/50 bg-card/40 p-4 backdrop-blur-xl transition-all hover:border-primary/20 hover:shadow-sm"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -203,19 +237,22 @@ export function DashboardPage() {
                             "flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110",
                             tx.type === "income"
                               ? "bg-emerald-500/10 text-emerald-600"
-                              : "bg-rose-500/10 text-rose-600"
+                              : tx.type === "expense"
+                                ? "bg-rose-500/10 text-rose-600"
+                                : "bg-sky-500/10 text-sky-500"
                           )}
                         >
                           {tx.type === "income" ? (
                             <TrendingUp className="h-5 w-5" />
-                          ) : (
+                          ) : tx.type === "expense" ? (
                             <TrendingDown className="h-5 w-5" />
+                          ) : (
+                            <ArrowRightLeft className="h-5 w-5" />
                           )}
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-foreground">
-                            {tx.description ||
-                              (tx.type === "income" ? "Пополнение" : "Расход")}
+                            {normalizeTransactionLabel(tx.description, tx.type)}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
                             {format(new Date(tx.date), "d MMMM, HH:mm", {
@@ -229,10 +266,16 @@ export function DashboardPage() {
                           "text-sm font-bold",
                           tx.type === "income"
                             ? "text-emerald-600"
-                            : "text-foreground"
+                            : tx.type === "expense"
+                              ? "text-foreground"
+                              : "text-sky-500"
                         )}
                       >
-                        {tx.type === "income" ? "+" : "-"}
+                        {tx.type === "income"
+                          ? "+"
+                          : tx.type === "expense"
+                            ? "-"
+                            : ""}
                         {Number(tx.amount).toLocaleString("ru-RU")} ₽
                       </div>
                     </div>

@@ -12,9 +12,9 @@ export function WalletList() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {[1, 2].map((i) => (
-          <div key={i} className="h-32 animate-pulse rounded-2xl bg-muted/50" />
+          <div key={i} className="h-26 animate-pulse rounded-2xl bg-muted/50" />
         ))}
       </div>
     );
@@ -23,7 +23,7 @@ export function WalletList() {
   if (!wallets?.length) return null;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
       {wallets.map((wallet, index) => (
         <FadeIn
           key={wallet.id}
@@ -34,6 +34,7 @@ export function WalletList() {
           <div
             className={cn(
               "relative overflow-hidden rounded-2xl border border-border/50 p-5 shadow-sm transition-all hover:shadow-md group cursor-pointer",
+              "p-4 md:p-5",
               "bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl"
             )}
           >
@@ -41,21 +42,21 @@ export function WalletList() {
               <CreditCard className="h-24 w-24" />
             </div>
 
-            <div className="flex items-center gap-3 mb-6">
+            <div className="mb-3 flex items-center gap-2 md:mb-6 md:gap-3">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
                 <WalletIcon className="h-4 w-4" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground md:text-sm">
                 {wallet.name}
               </span>
             </div>
 
             <div className="relative">
-              <div className="text-2xl font-bold tracking-tight text-foreground">
+              <div className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
                 {Number(wallet.balance).toLocaleString("ru-RU")}{" "}
                 {wallet.currency === "RUB" ? "₽" : wallet.currency}
               </div>
-              <div className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+              <div className="mt-1 hidden items-center gap-1 text-xs text-muted-foreground md:flex">
                 <div className="h-1 w-1 rounded-full bg-emerald-500" />
                 Активен
               </div>

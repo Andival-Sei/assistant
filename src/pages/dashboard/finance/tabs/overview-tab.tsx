@@ -33,57 +33,61 @@ export function OverviewTab() {
     <div className="space-y-10">
       {/* Overview stats */}
       <FadeIn delay={0.1} direction="up" distance={12}>
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6">
+          <div className="rounded-2xl border border-border/50 bg-card/30 p-4 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow md:p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider md:text-sm">
                 Баланс
               </span>
-              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
-                <Wallet className="h-5 w-5" />
+              <div className="rounded-xl bg-primary/10 p-2 text-primary md:p-2.5">
+                <Wallet className="h-4 w-4 md:h-5 md:w-5" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-foreground">
+            <div className="text-xl font-bold text-foreground md:text-3xl">
               {totalBalance.toLocaleString("ru-RU")} ₽
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 hidden text-xs text-muted-foreground md:block">
               На {wallets?.length || 0} счетах
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="rounded-2xl border border-border/50 bg-card/30 p-4 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow md:p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider md:text-sm">
                 Доходы
               </span>
-              <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-500">
-                <ArrowUpRight className="h-5 w-5" />
+              <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-500 md:p-2.5">
+                <ArrowUpRight className="h-4 w-4 md:h-5 md:w-5" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-foreground">
+            <div className="text-xl font-bold text-foreground md:text-3xl">
               {stats.income.toLocaleString("ru-RU")} ₽
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">За все время</p>
+            <p className="mt-2 hidden text-xs text-muted-foreground md:block">
+              За все время
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="col-span-2 rounded-2xl border border-border/50 bg-card/30 p-4 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow md:col-span-1 md:p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider md:text-sm">
                 Расходы
               </span>
-              <div className="rounded-xl bg-rose-500/10 p-2.5 text-rose-500">
-                <ArrowDownLeft className="h-5 w-5" />
+              <div className="rounded-xl bg-rose-500/10 p-2 text-rose-500 md:p-2.5">
+                <ArrowDownLeft className="h-4 w-4 md:h-5 md:w-5" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-foreground">
+            <div className="text-xl font-bold text-foreground md:text-3xl">
               {stats.expense.toLocaleString("ru-RU")} ₽
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">За все время</p>
+            <p className="mt-2 hidden text-xs text-muted-foreground md:block">
+              За все время
+            </p>
           </div>
         </div>
       </FadeIn>
 
-      <div className="grid gap-10 lg:grid-cols-[1fr_350px]">
+      <div className="grid gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.6fr)_380px]">
         <div className="space-y-8">
           <section>
             <h2 className="text-xl font-bold mb-5 flex items-center gap-2">
