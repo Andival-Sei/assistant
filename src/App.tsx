@@ -14,6 +14,7 @@ import { PrivacyPage } from "@/pages/legal/privacy";
 import { Toaster } from "sonner";
 import { useTheme } from "@/providers/theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 import { usePwaRegistration } from "@/lib/pwa";
 import { PwaUpdateBanner } from "@/components/pwa-update-banner";
 
@@ -53,6 +54,7 @@ function App() {
         theme={theme as "light" | "dark" | "system"}
       />
       <SpeedInsights />
+      <Analytics />
     </>
   );
 }
