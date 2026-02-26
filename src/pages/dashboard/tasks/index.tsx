@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import {
   getCurrentPushSubscription,
   getPushSupportState,
+  runPushDiagnostics,
   showLocalTaskNotification,
   subscribeToPush,
   unsubscribePush,
@@ -167,6 +168,8 @@ export function TasksPage() {
   const [filter, setFilter] = useState<FilterMode>("all");
   const [pushEnabled, setPushEnabled] = useState(false);
   const [checkingPush, setCheckingPush] = useState(true);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [diagnosticsText, setDiagnosticsText] = useState("");
 
   const pushSupport = getPushSupportState();
 
@@ -342,6 +345,24 @@ export function TasksPage() {
 
   const handleDeleteTask = (taskId: string) => {
     void deleteTaskMutation.mutateAsync(taskId);
+  };
+
+  const handleRunDiagnostics = async () => {
+    if (!import.meta.env.DEV) return;
+
+    setDiagnosticsLoading(true);
+    try {
+      const diagnostics = await runPushDiagnostics();
+      setDiagnosticsText(JSON.stringify(diagnostics, null, 2));
+      toast.success("Диагностика push завершена");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Ошибка диагностики push";
+      setDiagnosticsText(`Ошибка: ${message}`);
+      toast.error(message);
+    } finally {
+      setDiagnosticsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -558,6 +579,38 @@ export function TasksPage() {
             <p className="mt-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               Этот браузер не поддерживает web push.
             </p>
+          )}
+
+          {import.meta.env.DEV && (
+            <div className="mt-4 space-y-3 rounded-xl border border-border/60 bg-background/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  DEV: диагностика push
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void handleRunDiagnostics()}
+                  disabled={diagnosticsLoading}
+                >
+                  {diagnosticsLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  Проверить
+                </Button>
+              </div>
+
+              {diagnosticsText ? (
+                <pre className="max-h-72 overflow-auto rounded-lg border border-border/50 bg-card p-2 text-[11px] leading-5 text-foreground/90">
+                  {diagnosticsText}
+                </pre>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Нажмите «Проверить», чтобы получить технический отчёт по push.
+                </p>
+              )}
+            </div>
           )}
         </div>
       </FadeIn>

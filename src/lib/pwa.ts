@@ -13,6 +13,51 @@ export type PushSupportState = {
   reason?: string;
 };
 
+export type PushDiagnostics = {
+  userAgent: string;
+  isSecureContext: boolean;
+  notificationPermission: NotificationPermission | "unsupported";
+  hasServiceWorker: boolean;
+  hasPushManager: boolean;
+  serviceWorkerController: boolean;
+  registrationScope?: string;
+  registrationActiveState?: string;
+  vapidConfigured: boolean;
+  vapidKeyLength: number;
+  vapidDecodedLength: number | null;
+  hasExistingSubscription: boolean;
+  existingEndpointHost: string | null;
+  subscribeAttempt: "not_run" | "ok" | "failed";
+  subscribeErrorName?: string;
+  subscribeErrorMessage?: string;
+};
+
+async function getServiceWorkerRegistration(
+  timeoutMs = 2500
+): Promise<ServiceWorkerRegistration | null> {
+  if (!("serviceWorker" in navigator)) {
+    return null;
+  }
+
+  const existing = await navigator.serviceWorker.getRegistration();
+  if (existing) {
+    return existing;
+  }
+
+  // В dev SW может быть отключён в конфиге PWA, и ready никогда не резолвится.
+  if (import.meta.env.DEV) {
+    return null;
+  }
+
+  const timeout = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), timeoutMs);
+  });
+
+  const resolved = await Promise.race([navigator.serviceWorker.ready, timeout]);
+
+  return resolved instanceof ServiceWorkerRegistration ? resolved : null;
+}
+
 function toHumanPushError(error: unknown): string {
   if (error instanceof DOMException) {
     if (error.name === "InvalidAccessError") {
@@ -84,6 +129,93 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+export async function runPushDiagnostics(): Promise<PushDiagnostics> {
+  const vapidPublicKeyRaw = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  const vapidPublicKey = vapidPublicKeyRaw
+    ? normalizeVapidPublicKey(vapidPublicKeyRaw)
+    : "";
+
+  const diagnostics: PushDiagnostics = {
+    userAgent: navigator.userAgent,
+    isSecureContext: window.isSecureContext,
+    notificationPermission:
+      "Notification" in window ? Notification.permission : "unsupported",
+    hasServiceWorker: "serviceWorker" in navigator,
+    hasPushManager: "PushManager" in window,
+    serviceWorkerController: Boolean(navigator.serviceWorker?.controller),
+    vapidConfigured: Boolean(vapidPublicKey),
+    vapidKeyLength: vapidPublicKey.length,
+    vapidDecodedLength: null,
+    hasExistingSubscription: false,
+    existingEndpointHost: null,
+    subscribeAttempt: "not_run",
+  };
+
+  if (!diagnostics.hasServiceWorker || !diagnostics.hasPushManager) {
+    return diagnostics;
+  }
+
+  const registration = await getServiceWorkerRegistration();
+  if (!registration) {
+    diagnostics.subscribeAttempt = "failed";
+    diagnostics.subscribeErrorName = "NoServiceWorkerRegistration";
+    diagnostics.subscribeErrorMessage =
+      "Не найдена активная регистрация service worker.";
+    return diagnostics;
+  }
+
+  diagnostics.registrationScope = registration.scope;
+  diagnostics.registrationActiveState = registration.active?.state;
+
+  const existing = await registration.pushManager.getSubscription();
+  diagnostics.hasExistingSubscription = Boolean(existing);
+  diagnostics.existingEndpointHost = existing
+    ? new URL(existing.endpoint).host
+    : null;
+
+  if (!vapidPublicKey) {
+    return diagnostics;
+  }
+
+  let applicationServerKey: Uint8Array;
+  try {
+    applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+    diagnostics.vapidDecodedLength = applicationServerKey.length;
+  } catch (error) {
+    diagnostics.subscribeAttempt = "failed";
+    diagnostics.subscribeErrorName =
+      error instanceof Error ? error.name : "DecodeError";
+    diagnostics.subscribeErrorMessage =
+      error instanceof Error ? error.message : String(error);
+    return diagnostics;
+  }
+
+  if (existing || diagnostics.notificationPermission !== "granted") {
+    return diagnostics;
+  }
+
+  try {
+    const tempSubscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey,
+    });
+    diagnostics.subscribeAttempt = "ok";
+    await tempSubscription.unsubscribe().catch(() => undefined);
+  } catch (error) {
+    diagnostics.subscribeAttempt = "failed";
+    diagnostics.subscribeErrorName =
+      error instanceof DOMException
+        ? error.name
+        : error instanceof Error
+          ? error.name
+          : "UnknownError";
+    diagnostics.subscribeErrorMessage =
+      error instanceof Error ? error.message : String(error);
+  }
+
+  return diagnostics;
+}
+
 export async function ensureNotificationPermission(): Promise<NotificationPermission> {
   if (!("Notification" in window)) {
     throw new Error("Уведомления не поддерживаются в этом браузере");
@@ -105,7 +237,11 @@ export async function getCurrentPushSubscription(): Promise<PushSubscription | n
     return null;
   }
 
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getServiceWorkerRegistration();
+  if (!registration) {
+    return null;
+  }
+
   return registration.pushManager.getSubscription();
 }
 
@@ -134,7 +270,13 @@ export async function subscribeToPush(): Promise<PushSubscription> {
     throw new Error("Нет разрешения на уведомления");
   }
 
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getServiceWorkerRegistration(5000);
+  if (!registration) {
+    throw new Error(
+      "Не найдена активная регистрация service worker. В dev-режиме push может быть отключён."
+    );
+  }
+
   const existing = await registration.pushManager.getSubscription();
   if (existing) return existing;
 
@@ -199,7 +341,8 @@ export async function showLocalTaskNotification(
   taskTitle: string
 ): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getServiceWorkerRegistration();
+  if (!registration) return;
 
   await registration.showNotification("Напоминание по задаче", {
     body: taskTitle || DEFAULT_REMINDER_BODY,

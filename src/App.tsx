@@ -3,6 +3,7 @@ import { LandingPage } from "@/pages/landing";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LoginPage } from "@/pages/auth/login";
 import { RegisterPage } from "@/pages/auth/register";
+import { OAuthCallbackPage } from "@/pages/auth/oauth-callback";
 import { DashboardPage } from "@/pages/dashboard";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { FinancePage } from "@/pages/dashboard/finance";
@@ -28,6 +29,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route

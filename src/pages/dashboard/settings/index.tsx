@@ -9,13 +9,21 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabaseClient } from "@/lib/db/supabase-client";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  hasGoogleIdentity,
+  startGoogleOAuth,
+} from "@/lib/services/auth-oauth-service";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { GoogleIcon } from "@/components/auth/google-icon";
 
 export function SettingsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const [geminiKey, setGeminiKey] = useState("");
@@ -29,8 +37,11 @@ export function SettingsPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isLinkingGoogle, setIsLinkingGoogle] = useState(false);
+  const [isUnlinkingGoogle, setIsUnlinkingGoogle] = useState(false);
   const [isSigningOutAll, setIsSigningOutAll] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isGoogleLinked, setIsGoogleLinked] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
@@ -60,6 +71,14 @@ export function SettingsPage() {
         } else if (data) {
           setGeminiKey(data.gemini_api_key || "");
         }
+
+        const { data: identitiesData, error: identitiesError } =
+          await supabaseClient.auth.getUserIdentities();
+        if (identitiesError) {
+          console.error("Error loading linked identities:", identitiesError);
+        } else {
+          setIsGoogleLinked(hasGoogleIdentity(identitiesData?.identities));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -67,6 +86,22 @@ export function SettingsPage() {
 
     loadSettings();
   }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("google_linked") !== "1") return;
+
+    toast.success("Google аккаунт успешно привязан");
+    params.delete("google_linked");
+    const nextSearch = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+      },
+      { replace: true }
+    );
+  }, [location.pathname, location.search, navigate]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -93,14 +128,8 @@ export function SettingsPage() {
   const handleSignOutAllDevices = async () => {
     setIsSigningOutAll(true);
     try {
-      const { error } = await supabaseClient.auth.signOut({ scope: "global" });
-      if (error) {
-        toast.error("Ошибка при выходе: " + error.message);
-        return;
-      }
-
+      await logout("global");
       toast.success("Вы вышли со всех устройств");
-      await logout();
     } finally {
       setIsSigningOutAll(false);
     }
@@ -125,6 +154,56 @@ export function SettingsPage() {
       await logout();
     } finally {
       setIsDeletingAccount(false);
+    }
+  };
+
+  const handleLinkGoogleAccount = async () => {
+    setIsLinkingGoogle(true);
+    try {
+      await startGoogleOAuth("link", "/dashboard/settings");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Не удалось запустить привязку Google"
+      );
+      setIsLinkingGoogle(false);
+    }
+  };
+
+  const handleUnlinkGoogleAccount = async () => {
+    setIsUnlinkingGoogle(true);
+    try {
+      const { data, error } = await supabaseClient.auth.getUserIdentities();
+      if (error) {
+        throw error;
+      }
+
+      const googleIdentity = (data?.identities ?? []).find(
+        (identity) => identity.provider === "google"
+      );
+
+      if (!googleIdentity) {
+        toast.info("Google уже не привязан");
+        setIsGoogleLinked(false);
+        return;
+      }
+
+      const { error: unlinkError } =
+        await supabaseClient.auth.unlinkIdentity(googleIdentity);
+
+      if (unlinkError) {
+        throw unlinkError;
+      }
+
+      setIsGoogleLinked(false);
+      toast.success("Google аккаунт отвязан");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Не удалось отвязать Google";
+      toast.error(message);
+    } finally {
+      setIsUnlinkingGoogle(false);
     }
   };
 
@@ -455,6 +534,37 @@ export function SettingsPage() {
             </h3>
 
             <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium">Google аккаунт</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isGoogleLinked
+                      ? "Google уже привязан к вашему аккаунту."
+                      : "Привяжите Google, чтобы входить в один клик."}
+                  </p>
+                </div>
+                {isGoogleLinked ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleUnlinkGoogleAccount}
+                    disabled={isUnlinkingGoogle}
+                    className="shrink-0"
+                  >
+                    {isUnlinkingGoogle ? "Отвязываем..." : "Отвязать"}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handleLinkGoogleAccount}
+                    disabled={isLinkingGoogle}
+                    className="shrink-0"
+                  >
+                    <GoogleIcon className="h-4 w-4" />
+                    {isLinkingGoogle ? "Переход..." : "Привязать Google"}
+                  </Button>
+                )}
+              </div>
+
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-medium">Выйти со всех устройств</p>

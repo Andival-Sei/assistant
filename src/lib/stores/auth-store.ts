@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/db/supabase-client";
+import { queryClient } from "@/providers/query-provider";
 
 // Состояние авторизации приложения
 interface AuthState {
@@ -15,7 +16,7 @@ interface AuthActions {
   setUnauthenticated: () => void;
   setSession: (session: Session | null) => void;
   clearSession: () => void;
-  logout: () => Promise<void>;
+  logout: (scope?: "local" | "global") => Promise<void>;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -52,8 +53,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
       session: null,
     })),
 
-  logout: async () => {
-    await supabaseClient.auth.signOut();
+  logout: async (scope = "local") => {
+    const { error } = await supabaseClient.auth.signOut({ scope });
+    if (error) {
+      console.error("[auth-store] signOut error", error);
+    }
+    queryClient.clear();
     set({ status: "unauthenticated", user: null, session: null });
   },
 }));

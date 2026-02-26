@@ -58,5 +58,11 @@
     "vite-plugin-pwa": "^1.2.0",
     "workbox-precaching": "^7.4.0",
     "workbox-window": "^7.4.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch@^3.0.0": "3.1.5",
+      "minimatch@^9.0.0": "9.0.8"
+    }
   }
 }

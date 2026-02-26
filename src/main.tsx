@@ -7,16 +7,31 @@ import { QueryProvider } from "./providers/query-provider";
 import App from "./App";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <ThemeProvider>
-        <QueryProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </QueryProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  </StrictMode>
-);
+async function prepareDev() {
+  const keepDevServiceWorker = import.meta.env.VITE_PWA_DEV_ENABLED === "true";
+
+  if (
+    import.meta.env.DEV &&
+    !keepDevServiceWorker &&
+    "serviceWorker" in navigator
+  ) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((r) => r.unregister()));
+  }
+}
+
+prepareDev().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <BrowserRouter>
+        <ThemeProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </QueryProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </StrictMode>
+  );
+});

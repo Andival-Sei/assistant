@@ -15,5 +15,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Единый инстанс Supabase клиента для всего приложения
 export const supabaseClient: SupabaseClient = createClient(
   supabaseUrl,
-  supabaseAnonKey
+  supabaseAnonKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      flowType: "pkce",
+    },
+  }
 );
