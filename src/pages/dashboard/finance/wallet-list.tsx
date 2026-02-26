@@ -12,7 +12,7 @@ export function WalletList() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3 sm:gap-4">
         {[1, 2].map((i) => (
           <div key={i} className="h-26 animate-pulse rounded-2xl bg-muted/50" />
         ))}
@@ -23,7 +23,7 @@ export function WalletList() {
   if (!wallets?.length) return null;
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3 sm:gap-4">
       {wallets.map((wallet, index) => (
         <FadeIn
           key={wallet.id}
@@ -35,24 +35,27 @@ export function WalletList() {
             className={cn(
               "relative overflow-hidden rounded-2xl border border-border/50 p-5 shadow-sm transition-all hover:shadow-md group cursor-pointer",
               "p-4 md:p-5",
-              "bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl"
+              "bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl"
             )}
           >
             <div className="absolute -right-4 -top-4 text-primary/5 transition-transform group-hover:scale-110 group-hover:-rotate-12">
               <CreditCard className="h-24 w-24" />
             </div>
 
-            <div className="mb-3 flex items-center gap-2 md:mb-6 md:gap-3">
+            <div className="mb-3 flex min-w-0 items-center gap-2 md:mb-6 md:gap-3">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
                 <WalletIcon className="h-4 w-4" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground md:text-sm">
+              <span
+                title={wallet.name}
+                className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground md:text-sm"
+              >
                 {wallet.name}
               </span>
             </div>
 
             <div className="relative">
-              <div className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
+              <div className="text-[clamp(1.125rem,1.8vw,1.5rem)] font-bold tabular-nums whitespace-nowrap tracking-tight text-foreground">
                 {Number(wallet.balance).toLocaleString("ru-RU")}{" "}
                 {wallet.currency === "RUB" ? "₽" : wallet.currency}
               </div>

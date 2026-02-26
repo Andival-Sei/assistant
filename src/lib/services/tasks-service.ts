@@ -3,6 +3,8 @@ import type {
   PushSubscriptionRow,
   Task,
   TaskCreateInput,
+  TaskIntentParseInput,
+  TaskIntentParseResult,
   TaskUpdateInput,
 } from "@/types/tasks";
 
@@ -37,6 +39,16 @@ export const tasksService = {
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
       due_at: input.due_at || null,
+      timezone: input.timezone || null,
+      recurrence_rule: input.recurrence_rule || null,
+      recurrence_text: input.recurrence_text || null,
+      source_text: input.source_text?.trim() || null,
+      parse_confidence:
+        typeof input.parse_confidence === "number"
+          ? input.parse_confidence
+          : null,
+      parse_model: input.parse_model || null,
+      parse_assumptions: input.parse_assumptions ?? [],
       reminder_enabled: Boolean(input.reminder_enabled && input.due_at),
       user_id: user.id,
     };
@@ -67,6 +79,8 @@ export const tasksService = {
     if (!normalized.due_at) {
       normalized.reminder_enabled = false;
       normalized.reminder_sent_at = null;
+      normalized.recurrence_rule = null;
+      normalized.recurrence_text = null;
     }
 
     if (normalized.is_completed === true) {
@@ -87,6 +101,42 @@ export const tasksService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async parseTaskIntent(
+    input: TaskIntentParseInput
+  ): Promise<TaskIntentParseResult> {
+    const { data, error } = await supabaseClient.functions.invoke(
+      "tasks-parse-intent",
+      {
+        body: {
+          text: input.text,
+          source: input.source ?? "text",
+          timezone:
+            input.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      }
+    );
+
+    if (error) {
+      let errorMessage = error.message;
+      if (error.context instanceof Response) {
+        try {
+          const text = await error.context.text();
+          try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = text || errorMessage;
+          }
+        } catch {
+          // ignore parsing error and fallback to original error message
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return data as TaskIntentParseResult;
   },
 
   async deleteTask(id: string): Promise<void> {

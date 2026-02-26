@@ -7,6 +7,8 @@ type TaskRow = {
   title: string;
   notes: string | null;
   due_at: string;
+  timezone: string | null;
+  recurrence_rule: string | null;
   reminder_enabled: boolean;
   reminder_sent_at: string | null;
   is_completed: boolean;
@@ -39,6 +41,142 @@ function toSubscription(row: SubscriptionRow) {
       auth: row.auth,
     },
   };
+}
+
+function parseRRule(rrule: string): Record<string, string> {
+  return rrule.split(";").reduce<Record<string, string>>((acc, part) => {
+    const [key, value] = part.split("=");
+    if (key && value) {
+      acc[key.toUpperCase()] = value;
+    }
+    return acc;
+  }, {});
+}
+
+function monthNthWeekdayUtc(
+  year: number,
+  month: number,
+  weekday: number,
+  nth: number,
+  sourceTime: Date
+): Date {
+  const firstDay = new Date(Date.UTC(year, month, 1));
+  const firstWeekday = firstDay.getUTCDay();
+  const offset = (weekday - firstWeekday + 7) % 7;
+  const day = 1 + offset + (nth - 1) * 7;
+  return new Date(
+    Date.UTC(
+      year,
+      month,
+      day,
+      sourceTime.getUTCHours(),
+      sourceTime.getUTCMinutes(),
+      sourceTime.getUTCSeconds()
+    )
+  );
+}
+
+function buildNextOccurrence(task: TaskRow): string | null {
+  if (!task.recurrence_rule || !task.due_at) return null;
+
+  const dueAt = new Date(task.due_at);
+  if (Number.isNaN(dueAt.getTime())) return null;
+
+  try {
+    const rule = parseRRule(task.recurrence_rule);
+    const freq = rule.FREQ;
+    const interval = Math.max(
+      Number.parseInt(rule.INTERVAL ?? "1", 10) || 1,
+      1
+    );
+
+    if (freq === "DAILY") {
+      const next = new Date(dueAt);
+      next.setUTCDate(next.getUTCDate() + interval);
+      return next.toISOString();
+    }
+
+    if (freq === "WEEKLY") {
+      const byDayRaw = rule.BYDAY;
+      if (!byDayRaw) {
+        const next = new Date(dueAt);
+        next.setUTCDate(next.getUTCDate() + interval * 7);
+        return next.toISOString();
+      }
+
+      const dayMap: Record<string, number> = {
+        SU: 0,
+        MO: 1,
+        TU: 2,
+        WE: 3,
+        TH: 4,
+        FR: 5,
+        SA: 6,
+      };
+      const targets = byDayRaw
+        .split(",")
+        .map((d) => d.trim().toUpperCase())
+        .map((d) => dayMap[d])
+        .filter((d): d is number => Number.isInteger(d));
+
+      if (targets.length === 0) {
+        const next = new Date(dueAt);
+        next.setUTCDate(next.getUTCDate() + interval * 7);
+        return next.toISOString();
+      }
+
+      const probe = new Date(dueAt);
+      for (let i = 1; i <= 370; i += 1) {
+        probe.setUTCDate(probe.getUTCDate() + 1);
+        if (targets.includes(probe.getUTCDay())) {
+          return probe.toISOString();
+        }
+      }
+      return null;
+    }
+
+    if (freq === "MONTHLY") {
+      const byDay = rule.BYDAY;
+      const bySetPos = Number.parseInt(rule.BYSETPOS ?? "", 10);
+
+      if (byDay && Number.isInteger(bySetPos) && bySetPos > 0) {
+        const dayMap: Record<string, number> = {
+          SU: 0,
+          MO: 1,
+          TU: 2,
+          WE: 3,
+          TH: 4,
+          FR: 5,
+          SA: 6,
+        };
+        const weekday = dayMap[byDay.trim().toUpperCase()];
+        if (Number.isInteger(weekday)) {
+          const sourceMonth = dueAt.getUTCMonth();
+          const sourceYear = dueAt.getUTCFullYear();
+          const targetMonthIndex = sourceMonth + interval;
+          const targetYear = sourceYear + Math.floor(targetMonthIndex / 12);
+          const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+
+          const next = monthNthWeekdayUtc(
+            targetYear,
+            targetMonth,
+            weekday,
+            bySetPos,
+            dueAt
+          );
+          return next.toISOString();
+        }
+      }
+
+      const next = new Date(dueAt);
+      next.setUTCMonth(next.getUTCMonth() + interval);
+      return next.toISOString();
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -120,7 +258,7 @@ Deno.serve(async (req) => {
     const { data: dueTasks, error: tasksError } = await supabase
       .from("tasks")
       .select(
-        "id,user_id,title,notes,due_at,reminder_enabled,reminder_sent_at,is_completed"
+        "id,user_id,title,notes,due_at,timezone,recurrence_rule,reminder_enabled,reminder_sent_at,is_completed"
       )
       .eq("reminder_enabled", true)
       .eq("is_completed", false)
@@ -216,10 +354,21 @@ Deno.serve(async (req) => {
       }
 
       if (delivered || userSubs.length === 0) {
-        await supabase
-          .from("tasks")
-          .update({ reminder_sent_at: new Date().toISOString() })
-          .eq("id", task.id);
+        const nextDueAt = buildNextOccurrence(task);
+        if (nextDueAt) {
+          await supabase
+            .from("tasks")
+            .update({
+              due_at: nextDueAt,
+              reminder_sent_at: null,
+            })
+            .eq("id", task.id);
+        } else {
+          await supabase
+            .from("tasks")
+            .update({ reminder_sent_at: new Date().toISOString() })
+            .eq("id", task.id);
+        }
       }
     }
 

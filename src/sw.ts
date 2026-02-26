@@ -1,6 +1,11 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, precacheAndRoute } from "workbox-precaching";
 
+// Suppress verbose workbox debug logs in development.
+(
+  self as typeof self & { __WB_DISABLE_DEV_LOGS?: boolean }
+).__WB_DISABLE_DEV_LOGS = true;
+
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{
     revision: string | null;

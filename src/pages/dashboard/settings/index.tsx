@@ -18,6 +18,7 @@ import {
 } from "@/lib/services/auth-oauth-service";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { GoogleIcon } from "@/components/auth/google-icon";
 
@@ -42,13 +43,22 @@ export function SettingsPage() {
   const [isSigningOutAll, setIsSigningOutAll] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isGoogleLinked, setIsGoogleLinked] = useState(false);
+  const [hasLoadedSettings, setHasLoadedSettings] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
-      if (!user) return;
+      if (!user) {
+        setHasLoadedSettings(false);
+        return;
+      }
+
+      setHasLoadedSettings(false);
       setIsLoading(true);
       try {
+        setGeminiKey("");
+        setDisplayName("");
         setEmail(user.email ?? "");
+        setIsGoogleLinked(false);
 
         const { data: profileData, error: profileError } = await supabaseClient
           .from("user_profiles")
@@ -81,6 +91,7 @@ export function SettingsPage() {
         }
       } finally {
         setIsLoading(false);
+        setHasLoadedSettings(true);
       }
     }
 
@@ -291,6 +302,8 @@ export function SettingsPage() {
     }
   };
 
+  const shouldShowSkeletons = Boolean(user) && !hasLoadedSettings;
+
   return (
     <div className="space-y-6">
       <FadeIn direction="up" distance={12}>
@@ -312,33 +325,40 @@ export function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Имя</label>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSaveProfile();
-                  }}
-                  className="flex gap-2"
-                >
-                  <Input
-                    placeholder="Как к вам обращаться?"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    disabled={isLoading || isSavingProfile}
-                    autoComplete="name"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading || isSavingProfile}
-                    className="shrink-0"
+                {shouldShowSkeletons ? (
+                  <div className="flex gap-2">
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 w-32 shrink-0" />
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveProfile();
+                    }}
+                    className="flex gap-2"
                   >
-                    {isSavingProfile ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Сохранить
-                  </Button>
-                </form>
+                    <Input
+                      placeholder="Как к вам обращаться?"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      disabled={isLoading || isSavingProfile}
+                      autoComplete="name"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isLoading || isSavingProfile}
+                      className="shrink-0"
+                    >
+                      {isSavingProfile ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Сохранить
+                    </Button>
+                  </form>
+                )}
               </div>
             </div>
           </div>
@@ -355,34 +375,41 @@ export function SettingsPage() {
                 <label className="text-sm font-medium mb-1.5 block">
                   Email
                 </label>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSaveEmail();
-                  }}
-                  className="flex gap-2"
-                >
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading || isSavingEmail}
-                    autoComplete="email"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading || isSavingEmail}
-                    className="shrink-0"
+                {shouldShowSkeletons ? (
+                  <div className="flex gap-2">
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 w-28 shrink-0" />
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveEmail();
+                    }}
+                    className="flex gap-2"
                   >
-                    {isSavingEmail ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Сменить
-                  </Button>
-                </form>
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isLoading || isSavingEmail}
+                      autoComplete="email"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isLoading || isSavingEmail}
+                      className="shrink-0"
+                    >
+                      {isSavingEmail ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Сменить
+                    </Button>
+                  </form>
+                )}
               </div>
             </div>
           </div>
@@ -395,53 +422,67 @@ export function SettingsPage() {
               Пароль
             </h3>
             <div className="space-y-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSavePassword();
-                }}
-                className="grid gap-3"
-              >
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Новый пароль
-                  </label>
-                  <Input
-                    type="password"
-                    placeholder="Минимум 8 символов"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={isLoading || isSavingPassword}
-                    autoComplete="new-password"
-                  />
+              {shouldShowSkeletons ? (
+                <div className="grid gap-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <Skeleton className="h-10 w-44" />
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Повторите пароль
-                  </label>
-                  <Input
-                    type="password"
-                    placeholder="Повторите новый пароль"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading || isSavingPassword}
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div>
-                  <Button
-                    type="submit"
-                    disabled={isLoading || isSavingPassword}
-                  >
-                    {isSavingPassword ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Обновить пароль
-                  </Button>
-                </div>
-              </form>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSavePassword();
+                  }}
+                  className="grid gap-3"
+                >
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">
+                      Новый пароль
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="Минимум 8 символов"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={isLoading || isSavingPassword}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">
+                      Повторите пароль
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="Повторите новый пароль"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading || isSavingPassword}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      type="submit"
+                      disabled={isLoading || isSavingPassword}
+                    >
+                      {isSavingPassword ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Обновить пароль
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </FadeIn>
@@ -474,47 +515,59 @@ export function SettingsPage() {
                 <label className="text-sm font-medium mb-1.5 block">
                   Gemini API Key
                 </label>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSave();
-                  }}
-                  className="flex gap-2"
-                >
-                  <Input
-                    type="password"
-                    placeholder="Введите ваш API ключ..."
-                    value={geminiKey}
-                    onChange={(e) => setGeminiKey(e.target.value)}
-                    disabled={isLoading || isSaving}
-                    autoComplete="current-password"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading || isSaving}
-                    className="shrink-0"
-                  >
-                    {isSaving ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Сохранить
-                  </Button>
-                </form>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Ключ необходим для автоматического распознавания чеков. Вы
-                  можете получить его бесплатно в{" "}
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Google AI Studio
-                  </a>
-                  .
-                </p>
+                {shouldShowSkeletons ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Skeleton className="h-10 flex-1" />
+                      <Skeleton className="h-10 w-32 shrink-0" />
+                    </div>
+                    <Skeleton className="h-3 w-[70%]" />
+                  </div>
+                ) : (
+                  <>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSave();
+                      }}
+                      className="flex gap-2"
+                    >
+                      <Input
+                        type="password"
+                        placeholder="Введите ваш API ключ..."
+                        value={geminiKey}
+                        onChange={(e) => setGeminiKey(e.target.value)}
+                        disabled={isLoading || isSaving}
+                        autoComplete="current-password"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={isLoading || isSaving}
+                        className="shrink-0"
+                      >
+                        {isSaving ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Сохранить
+                      </Button>
+                    </form>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Ключ необходим для автоматического распознавания чеков. Вы
+                      можете получить его бесплатно в{" "}
+                      <a
+                        href="https://aistudio.google.com/app/apikey"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Google AI Studio
+                      </a>
+                      .
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -537,13 +590,19 @@ export function SettingsPage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-medium">Google аккаунт</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isGoogleLinked
-                      ? "Google уже привязан к вашему аккаунту."
-                      : "Привяжите Google, чтобы входить в один клик."}
-                  </p>
+                  <div className="text-sm text-muted-foreground">
+                    {shouldShowSkeletons ? (
+                      <Skeleton className="mt-2 h-3 w-64" />
+                    ) : isGoogleLinked ? (
+                      "Google уже привязан к вашему аккаунту."
+                    ) : (
+                      "Привяжите Google, чтобы входить в один клик."
+                    )}
+                  </div>
                 </div>
-                {isGoogleLinked ? (
+                {shouldShowSkeletons ? (
+                  <Skeleton className="h-10 w-44 shrink-0" />
+                ) : isGoogleLinked ? (
                   <Button
                     variant="outline"
                     onClick={handleUnlinkGoogleAccount}
@@ -572,17 +631,21 @@ export function SettingsPage() {
                     Завершит все активные сессии вашего аккаунта.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={handleSignOutAllDevices}
-                  disabled={isSigningOutAll}
-                  className="shrink-0"
-                >
-                  {isSigningOutAll ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  ) : null}
-                  Выйти
-                </Button>
+                {shouldShowSkeletons ? (
+                  <Skeleton className="h-10 w-24 shrink-0" />
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={handleSignOutAllDevices}
+                    disabled={isSigningOutAll}
+                    className="shrink-0"
+                  >
+                    {isSigningOutAll ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : null}
+                    Выйти
+                  </Button>
+                )}
               </div>
 
               <div className="border-t border-border/50 pt-4">
@@ -593,25 +656,32 @@ export function SettingsPage() {
                   Это действие необратимо. Чтобы подтвердить, введите слово
                   "удалить".
                 </p>
-                <div className="mt-3 flex gap-2">
-                  <Input
-                    placeholder="Введите: удалить"
-                    value={deleteConfirm}
-                    onChange={(e) => setDeleteConfirm(e.target.value)}
-                    disabled={isDeletingAccount}
-                  />
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteAccount}
-                    disabled={isDeletingAccount}
-                    className="shrink-0"
-                  >
-                    {isDeletingAccount ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : null}
-                    Удалить
-                  </Button>
-                </div>
+                {shouldShowSkeletons ? (
+                  <div className="mt-3 flex gap-2">
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 w-28 shrink-0" />
+                  </div>
+                ) : (
+                  <div className="mt-3 flex gap-2">
+                    <Input
+                      placeholder="Введите: удалить"
+                      value={deleteConfirm}
+                      onChange={(e) => setDeleteConfirm(e.target.value)}
+                      disabled={isDeletingAccount}
+                    />
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteAccount}
+                      disabled={isDeletingAccount}
+                      className="shrink-0"
+                    >
+                      {isDeletingAccount ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : null}
+                      Удалить
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

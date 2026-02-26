@@ -3,6 +3,7 @@ import { FadeIn } from "@/components/motion";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useQuery } from "@tanstack/react-query";
 import { financeService } from "@/lib/services/finance-service";
+import { tasksService } from "@/lib/services/tasks-service";
 import {
   Wallet,
   TrendingUp,
@@ -20,6 +21,7 @@ import { ru } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function normalizeTransactionLabel(
   description: string | null | undefined,
@@ -45,15 +47,22 @@ export function DashboardPage() {
   const email = user?.email ?? "пользователь";
   const userName = email.split("@")[0];
 
-  const { data: wallets } = useQuery({
+  const { data: wallets, isLoading: walletsLoading } = useQuery({
     queryKey: ["wallets"],
     queryFn: financeService.getWallets,
   });
 
-  const { data: transactions } = useQuery({
+  const { data: transactions, isLoading: transactionsLoading } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => financeService.getTransactions({ limit: 10 }),
+    queryFn: () => financeService.getTransactions({ limit: 200 }),
   });
+
+  const { data: tasks, isLoading: tasksLoading } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: () => tasksService.getTasks(),
+  });
+
+  const isFinanceLoading = walletsLoading || transactionsLoading;
 
   const totalBalance = useMemo(
     () => wallets?.reduce((acc, w) => acc + Number(w.balance), 0) || 0,
@@ -78,6 +87,19 @@ export function DashboardPage() {
     );
   }, [transactions]);
 
+  const tasksStats = useMemo(() => {
+    const list = tasks ?? [];
+    const total = list.length;
+    const done = list.filter((task) => task.is_completed).length;
+    const active = total - done;
+
+    return {
+      total,
+      done,
+      active,
+    };
+  }, [tasks]);
+
   const monthExpenseSharePercent = useMemo(() => {
     if (!totalBalance || totalBalance <= 0) {
       return null;
@@ -89,6 +111,34 @@ export function DashboardPage() {
   }, [monthStats.expense, totalBalance]);
 
   const recentTransactions = transactions?.slice(0, 5) || [];
+  const tasksPreview = useMemo(() => {
+    const list = tasks ?? [];
+    const active = list.filter((task) => !task.is_completed);
+    return active.slice(0, 4);
+  }, [tasks]);
+
+  const insightText = useMemo(() => {
+    if (!transactions || transactions.length === 0) {
+      return "Добавьте первую транзакцию — и здесь появятся инсайты по тратам.";
+    }
+
+    const net = monthStats.income - monthStats.expense;
+    const netText =
+      net >= 0
+        ? `Доходы выше расходов на ${Math.abs(net).toLocaleString("ru-RU")} ₽ за месяц.`
+        : `Расходы выше доходов на ${Math.abs(net).toLocaleString("ru-RU")} ₽ за месяц.`;
+
+    if (monthExpenseSharePercent === null) {
+      return netText;
+    }
+
+    return `${netText} Доля расходов: ${monthExpenseSharePercent}% от текущего баланса.`;
+  }, [
+    monthExpenseSharePercent,
+    monthStats.expense,
+    monthStats.income,
+    transactions,
+  ]);
 
   return (
     <div className="space-y-10 pb-10">
@@ -132,11 +182,21 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="text-xl font-bold text-foreground sm:text-2xl">
-              {totalBalance.toLocaleString("ru-RU")} ₽
+              {isFinanceLoading ? (
+                <Skeleton className="h-6 w-28" />
+              ) : (
+                `${totalBalance.toLocaleString("ru-RU")} ₽`
+              )}
             </div>
             <div className="mt-2 hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Все счета активны
+              {isFinanceLoading ? (
+                <Skeleton className="h-3 w-32" />
+              ) : (
+                <>
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Все счета активны
+                </>
+              )}
             </div>
           </div>
         </FadeIn>
@@ -152,10 +212,18 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="text-xl font-bold text-foreground sm:text-2xl">
-              {monthStats.income.toLocaleString("ru-RU")} ₽
+              {isFinanceLoading ? (
+                <Skeleton className="h-6 w-28" />
+              ) : (
+                `${monthStats.income.toLocaleString("ru-RU")} ₽`
+              )}
             </div>
             <div className="mt-2 hidden text-xs text-muted-foreground sm:block">
-              За текущий месяц
+              {isFinanceLoading ? (
+                <Skeleton className="h-3 w-32" />
+              ) : (
+                "За текущий месяц"
+              )}
             </div>
           </div>
         </FadeIn>
@@ -171,14 +239,24 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="text-xl font-bold text-foreground sm:text-2xl">
-              {monthStats.expense.toLocaleString("ru-RU")} ₽
+              {isFinanceLoading ? (
+                <Skeleton className="h-6 w-28" />
+              ) : (
+                `${monthStats.expense.toLocaleString("ru-RU")} ₽`
+              )}
             </div>
             <div className="mt-2 hidden text-xs text-rose-500/80 sm:block">
-              {monthStats.expense > 0 && monthExpenseSharePercent !== null
-                ? `-${monthExpenseSharePercent}% от баланса`
-                : monthStats.expense > 0 && monthExpenseSharePercent === null
-                  ? "Баланс пока 0 ₽"
-                  : "Трат нет"}
+              {isFinanceLoading ? (
+                <Skeleton className="h-3 w-40" />
+              ) : monthStats.expense > 0 &&
+                monthExpenseSharePercent !== null ? (
+                `-${monthExpenseSharePercent}% от баланса`
+              ) : monthStats.expense > 0 &&
+                monthExpenseSharePercent === null ? (
+                "Баланс пока 0 ₽"
+              ) : (
+                "Трат нет"
+              )}
             </div>
           </div>
         </FadeIn>
@@ -194,10 +272,14 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="text-xl font-bold text-foreground sm:text-2xl">
-              0 / 0
+              {tasksLoading ? "—" : `${tasksStats.done} / ${tasksStats.total}`}
             </div>
             <div className="mt-2 hidden text-xs text-muted-foreground sm:block">
-              Все цели достигнуты
+              {tasksLoading
+                ? "Загрузка..."
+                : tasksStats.active > 0
+                  ? `Активных: ${tasksStats.active}`
+                  : "Нет активных задач"}
             </div>
           </div>
         </FadeIn>
@@ -224,7 +306,25 @@ export function DashboardPage() {
                 </Link>
               </div>
 
-              {recentTransactions.length > 0 ? (
+              {transactionsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center justify-between rounded-2xl border border-border/50 bg-card/40 p-4 backdrop-blur-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  ))}
+                </div>
+              ) : recentTransactions.length > 0 ? (
                 <div className="space-y-3">
                   {recentTransactions.map((tx) => (
                     <div
@@ -295,7 +395,7 @@ export function DashboardPage() {
             </div>
           </FadeIn>
 
-          {/* Tasks Placeholder */}
+          {/* Tasks */}
           <FadeIn delay={0.35} direction="up" distance={16}>
             <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-xl shadow-sm">
               <div className="mb-6 flex items-center justify-between">
@@ -303,26 +403,76 @@ export function DashboardPage() {
                   <CheckCircle2 className="h-5 w-5 text-orange-500" />
                   <h3 className="font-bold text-foreground">Список дел</h3>
                 </div>
-                <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-600 uppercase">
-                  Beta
-                </span>
+                <Link
+                  to="/dashboard/tasks"
+                  className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+                >
+                  Открыть <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
-              <div className="relative space-y-3 opacity-60 grayscale-[0.5]">
-                <div className="flex items-center gap-3 rounded-lg border border-dashed border-border p-3">
-                  <div className="h-4 w-4 rounded-sm border-2 border-muted" />
-                  <div className="h-3 w-1/3 rounded-full bg-muted" />
+
+              {tasksLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-12 animate-pulse rounded-xl bg-muted/50"
+                    />
+                  ))}
                 </div>
-                <div className="flex items-center gap-3 rounded-lg border border-dashed border-border p-3">
-                  <div className="h-4 w-4 rounded-sm border-2 border-muted" />
-                  <div className="h-3 w-1/2 rounded-full bg-muted" />
+              ) : tasksPreview.length > 0 ? (
+                <div className="space-y-2">
+                  {tasksPreview.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-card/40 px-4 py-3 backdrop-blur-xl"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="h-4 w-4 rounded-sm border-2 border-orange-500/60" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {task.title}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {task.due_at
+                              ? format(new Date(task.due_at), "d MMMM, HH:mm", {
+                                  locale: ru,
+                                })
+                              : "Без даты"}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:text-orange-300 uppercase">
+                        todo
+                      </span>
+                    </div>
+                  ))}
+                  {tasksStats.active > tasksPreview.length ? (
+                    <p className="pt-2 text-xs text-muted-foreground">
+                      И ещё {tasksStats.active - tasksPreview.length} в списке.
+                    </p>
+                  ) : null}
                 </div>
-                {/* Overlay coming soon */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/20 backdrop-blur-[1px]">
-                  <p className="text-xs font-bold text-foreground/80 tracking-widest uppercase">
-                    Скоро появится
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="rounded-full bg-muted/50 p-4 mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-sm text-muted-foreground max-w-[260px]">
+                    Активных задач нет. Добавьте первую — и она появится здесь.
                   </p>
+                  <Link to="/dashboard/tasks" className="mt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Добавить задачу
+                    </Button>
+                  </Link>
                 </div>
-              </div>
+              )}
             </div>
           </FadeIn>
         </div>
@@ -340,14 +490,19 @@ export function DashboardPage() {
                   </div>
                   <h3 className="font-bold text-foreground">Инсайт дня</h3>
                 </div>
-                <p className="text-sm text-foreground/80 leading-relaxed italic">
-                  «Вы потратили на 15% меньше в категории "Еда" на этой неделе.
-                  Отличный результат! Эти средства можно направить в
-                  накопления.»
-                </p>
+                {transactionsLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[80%]" />
+                    <Skeleton className="h-4 w-[60%]" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-foreground/80 leading-relaxed italic">
+                    «{insightText}»
+                  </p>
+                )}
                 <div className="mt-6 flex items-center justify-between border-t border-primary/10 pt-4">
                   <span className="text-[10px] font-bold text-primary uppercase">
-                    Smart Assistant
+                    На основе транзакций
                   </span>
                   <div className="flex -space-x-2">
                     {[1, 2, 3].map((i) => (
